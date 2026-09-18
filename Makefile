@@ -47,8 +47,21 @@ check:                   ## Vérifie que le simulateur tourne
 	$(DC) run --rm sim
 
 test:                    ## Lance les tests fournis par Epitech
-	$(DC) run --rm sim python test_contract.py
-	$(DC) run --rm sim python test_integration.py
+	@cd simulation; \
+	 docker compose run --rm sim python test_contract.py; a=$$?; \
+	 docker compose run --rm sim python test_integration.py; b=$$?; \
+	 echo ""; echo "=================================================="; \
+	 if [ $$a -eq 0 ]; then echo "  test_contract     OK"; \
+	                   else echo "  test_contract     ECHEC"; fi; \
+	 if [ $$b -eq 0 ]; then echo "  test_integration  OK"; \
+	                   else echo "  test_integration  ECHEC"; fi; \
+	 if [ $$a -ne 0 ] || [ $$b -ne 0 ]; then \
+	   echo ""; \
+	   echo "  Deux echecs sont connus et viennent du simulateur fourni,"; \
+	   echo "  pas de notre code : T08 (friction) et T05 (collisions)."; \
+	   echo "  Voir le guide de l'equipe dans Linear."; \
+	   exit 1; \
+	 fi
 
 venv:                    ## Installe l'environnement local pour l'affichage
 	python3 -m venv .venv
