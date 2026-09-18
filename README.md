@@ -6,7 +6,7 @@ Rendu : **7 février 2027 à 23:42 (Europe/Paris)**.
 
 ## Documentation et suivi
 
-Le [projet Linear Crash & Learn](https://linear.app/crash-and-learn/project/crash-and-learn-47dda639be2b) centralise tickets, jalons, décisions et documents.
+Le [projet Linear Crash & Learn](https://linear.app/crash-and-learn/project/crash-and-learn-47dda639be2b) centralise tickets, jalons, décisions et documents. Le PDF original du sujet est dans ses ressources.
 
 - [Cahier des charges et organisation](https://linear.app/crash-and-learn/document/cahier-des-charges-et-organisation-9aab6b9e1cd5)
 - [API du simulateur — référence et pièges](https://linear.app/crash-and-learn/document/api-du-simulateur-reference-et-pieges-25e8206e25e6)
