@@ -4,39 +4,38 @@
 
 Tout passe par le conteneur : il épingle la chaîne ONNX (`onnx 1.22`, `onnxruntime 1.29`, `torch 2.13+cpu`) avec laquelle le tournoi chargera nos modèles, et le couple `numpy 2.4.6` / `numba 0.65.1` sans lequel la simulation ne démarre pas. Un modèle exporté hors de cette image risque le *Unsupported model IR version* le jour J.
 
+Les commandes passent par le `Makefile` à la racine. `make` seul liste tout.
+
 ```bash
-cd simulation
-docker compose build                 # ~10 min la première fois
-docker compose run --rm sim          # démonstration, vérifie que tout tourne
+make build          # construit l'image, ~10 min la première fois
+make check          # vérifie que le simulateur tourne
+make test           # les tests fournis par Epitech
 ```
 
-Les tests fournis :
+Voir une course — on enregistre, puis on rejoue : le simulateur est headless, il n'y a pas de fenêtre live.
 
 ```bash
-docker compose run --rm sim python test_contract.py
-docker compose run --rm sim python test_integration.py
+make record NAME=essai CARS=1 CTRL=pure_pursuit
+make venv           # une fois, installe de quoi afficher
+make replay NAME=essai     # fenêtre interactive
+make video  NAME=essai     # ou export MP4
 ```
 
-Entraîner, puis suivre les courbes sur <http://localhost:6006> :
+Entraîner et suivre les courbes sur <http://localhost:6006> :
 
 ```bash
-docker compose run --rm sim python training/train.py
-docker compose up -d tensorboard
+make train DRIVER=driver1
+make board
 ```
 
 Vérifier une soumission — c'est le filtre exact de l'évaluation, à lancer tôt et souvent :
 
 ```bash
-docker compose run --rm sim python verify_submission.py --submission submission/
-docker compose run --rm sim python verify_submission.py --submission submission/ --grandprix
+make verify DRIVER=driver1   # un pilote seul
+make verify-gp               # la livraison complète
 ```
 
-Enregistrer une course et la rejouer :
-
-```bash
-docker compose run --rm recorder
-docker compose run --rm replay python viz_replay.py --record /app/recordings/course.mp4 --no-telemetry
-```
+**Windows** : `make` n'existe pas dans `cmd.exe`. Lancez ces commandes depuis WSL2 ou Git Bash — le Makefile détecte la plateforme et adapte le chemin de l'environnement Python et le backend d'affichage.
 
 ## Arborescence
 
