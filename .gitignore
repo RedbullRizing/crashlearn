@@ -1,0 +1,34 @@
+# Artefacts d'entraînement — volumineux et reproductibles, jamais versionnés.
+# Convention de nommage pour les retrouver : runs/<pilote>-<AAAAMMJJ>-<algo>/
+logs/*
+!logs/.gitkeep
+runs/*
+!runs/.gitkeep
+recordings/*
+!recordings/.gitkeep
+*.npz
+events.out.tfevents.*
+
+# Exception : fixture de test du simulateur fourni, elle fait partie de son code
+!simulation/gym/f110_gym/unittest/*.npz
+
+# Modèles.
+# Les modèles intermédiaires restent hors du suivi, mais ceux qui partent au
+# tournoi sont un livrable : submission/<pilote>/model.onnx est versionné.
+*.onnx
+*.onnx.data
+!submission/*/model.onnx
+!submission/*/model.onnx.data
+
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+.pytest_cache/
+.ipynb_checkpoints/
+
+# Système et éditeurs
+.DS_Store
+.idea/
+.vscode/
