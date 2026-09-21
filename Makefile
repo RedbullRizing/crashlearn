@@ -19,7 +19,7 @@ else
   endif
 endif
 
-DC := cd simulation && docker compose
+DC := docker compose
 
 # --- paramètres, surchargeables en ligne de commande -----------------------
 # Exemple : make record NAME=grand-crash CARS=4 CTRL=random
@@ -31,7 +31,7 @@ CTRL   ?= pure_pursuit
 DRIVER ?= driver1
 
 .DEFAULT_GOAL := help
-.PHONY: help build check test venv record replay video train board board-stop verify verify-gp clean
+.PHONY: help sim-check sim-hash build check test venv record replay video train board board-stop verify verify-gp clean
 
 help:                    ## Affiche cette aide
 	@grep -E '^[a-z-]+:.*?## .*$$' $(MAKEFILE_LIST) \
@@ -40,15 +40,26 @@ help:                    ## Affiche cette aide
 	@echo "  Paramètres : NAME=$(NAME) STEPS=$(STEPS) CARS=$(CARS) CTRL=$(CTRL) DRIVER=$(DRIVER)"
 
 # --- mise en route ---------------------------------------------------------
-build:                   ## Construit l'image Docker (~10 min la première fois)
+sim-check:
+	@test -f simulation/Dockerfile || { \
+	  echo "  simulation/ est absent."; \
+	  echo "  Il n'est pas versionné : télécharge l'archive d'Epitech et"; \
+	  echo "  décompresse-la en simulation/ à la racine du dépôt."; \
+	  echo "  Voir CONTRIBUTING.md."; \
+	  exit 1; }
+
+sim-hash: sim-check      ## Empreinte du simulateur — doit être identique chez tous
+	@cd simulation && find . -type f -not -path './__pycache__/*' -not -name '*.pyc' \
+	  | sort | xargs shasum -a 256 | shasum -a 256 | cut -c1-16
+
+build: sim-check         ## Construit l'image Docker (~10 min la première fois)
 	$(DC) build
 
-check:                   ## Vérifie que le simulateur tourne
+check: sim-check         ## Vérifie que le simulateur tourne
 	$(DC) run --rm sim
 
-test:                    ## Lance les tests fournis par Epitech
-	@cd simulation; \
-	 docker compose run --rm sim python test_contract.py; a=$$?; \
+test: sim-check          ## Lance les tests fournis par Epitech
+	@docker compose run --rm sim python test_contract.py; a=$$?; \
 	 docker compose run --rm sim python test_integration.py; b=$$?; \
 	 echo ""; echo "=================================================="; \
 	 if [ $$a -eq 0 ]; then echo "  test_contract     OK"; \
@@ -57,9 +68,9 @@ test:                    ## Lance les tests fournis par Epitech
 	                   else echo "  test_integration  ECHEC"; fi; \
 	 if [ $$a -ne 0 ] || [ $$b -ne 0 ]; then \
 	   echo ""; \
-	   echo "  Deux echecs sont connus et viennent du simulateur fourni,"; \
-	   echo "  pas de notre code : T08 (friction) et T05 (collisions)."; \
-	   echo "  Voir le guide de l'equipe dans Linear."; \
+	   echo "  T08 (friction) echoue par conception : env_simulation.py fige"; \
+	   echo "  l'adherence et porte un TODO. La meteo viendra de notre env.py."; \
+	   echo "  Tout autre echec est anormal — voir le guide d'equipe dans Linear."; \
 	   exit 1; \
 	 fi
 
@@ -100,9 +111,6 @@ verify:                  ## Vérifie un pilote : make verify DRIVER=driver2
 verify-gp:               ## Vérifie la livraison complète (mode tournoi)
 	$(DC) run --rm sim python verify_submission.py --submission submission/ --grandprix
 
-clean:                   ## Arrête les conteneurs, purge enregistrements et points de montage
+clean:                   ## Arrête les conteneurs et purge les enregistrements
 	@$(DC) down --remove-orphans 2>/dev/null || echo "  Docker non démarré — conteneurs ignorés"
 	rm -f recordings/*.npz recordings/*.mp4
-	@for d in training submission logs runs recordings; do \
-	   rmdir "simulation/$$d" 2>/dev/null && echo "  supprimé simulation/$$d" || true; \
-	 done
