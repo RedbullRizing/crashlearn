@@ -21,6 +21,12 @@ endif
 
 GIT_SHA   := $(shell git rev-parse --short HEAD 2>/dev/null || echo inconnu)
 GIT_DIRTY := $(shell test -n "$$(git status --porcelain 2>/dev/null)" && echo 1 || echo 0)
+# Empreinte du simulateur : LC_ALL=C pour que l'ordre de tri ne dépende pas de
+# la locale, -print0 pour survivre aux espaces dans les noms, et sha256sum en
+# repli quand shasum est absent (courant sous Linux).
+SHASUM    := $(shell command -v shasum >/dev/null 2>&1 && echo 'shasum -a 256' || echo 'sha256sum')
+SIM_LISTE := find . -type f -not -path './__pycache__/*' -not -name '*.pyc' -not -name '.DS_Store' | LC_ALL=C sort
+
 DC := docker compose
 RUN := $(DC) run --rm -e GIT_SHA=$(GIT_SHA) -e GIT_DIRTY=$(GIT_DIRTY)
 
@@ -37,7 +43,7 @@ EPISODES ?= 5
 CIRCUIT  ?= example
 
 .DEFAULT_GOAL := help
-.PHONY: help sim-check sim-hash courses build check test venv record replay video train board board-stop verify verify-gp clean
+.PHONY: help sim-check sim-hash sim-manifest courses build check test venv record replay video train board board-stop verify verify-gp clean
 
 help:                    ## Affiche cette aide
 	@grep -E '^[a-z-]+:.*?## .*$$' $(MAKEFILE_LIST) \
@@ -56,8 +62,14 @@ sim-check:
 	  exit 1; }
 
 sim-hash: sim-check      ## Empreinte du simulateur — doit être identique chez tous
-	@cd simulation && find . -type f -not -path './__pycache__/*' -not -name '*.pyc' \
-	  | sort | xargs shasum -a 256 | shasum -a 256 | cut -c1-16
+	@n=$$(cd simulation && $(SIM_LISTE) | wc -l | tr -d ' '); \
+	 h=$$(cd simulation && $(SIM_LISTE) | tr '\n' '\0' | xargs -0 $(SHASUM) | $(SHASUM) | cut -c1-16); \
+	 echo "  $$h   ($$n fichiers)"
+
+sim-manifest: sim-check  ## Écrit manifest-<user>.txt, une empreinte par fichier
+	@cd simulation && $(SIM_LISTE) | tr '\n' '\0' | xargs -0 $(SHASUM) > ../manifest-$(USER).txt
+	@echo "  manifest-$(USER).txt écrit — à comparer avec 'diff manifest-a.txt manifest-b.txt'"
+
 
 build: sim-check         ## Construit l'image Docker (~10 min la première fois)
 	$(DC) build

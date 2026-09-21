@@ -35,3 +35,6 @@ venv/
 # Chaque membre télécharge l'archive et la décompresse ici. Version de référence
 # notée dans CONTRIBUTING.md : tout le monde doit avoir la même.
 simulation/
+
+# Manifestes de comparaison du simulateur, locaux
+manifest-*.txt
