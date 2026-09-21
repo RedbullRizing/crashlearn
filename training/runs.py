@@ -9,6 +9,7 @@ et pose à côté de ses courbes un `meta.json` qui dit exactement d'où il vien
 
     runs/driver1-20261115-1430-ppo/
     ├── meta.json          qui, quoi, quand, avec quel code
+    ├── bilan.json         les chiffres finaux du run
     └── events.out.*       les courbes lues par TensorBoard
 
 Le SHA git est passé par variable d'environnement : le conteneur ne monte pas
@@ -126,6 +127,16 @@ class Run:
         """Envoie des métriques à TensorBoard."""
         for cle, valeur in mesures.items():
             self.writer.add_scalar(cle, valeur, pas)
+
+    def enregistrer_bilan(self, bilan: dict[str, float]) -> None:
+        """Écrit le résumé final à côté des courbes.
+
+        Les scalaires TensorBoard servent aux tendances épisode par épisode.
+        Un bilan est une valeur unique : le dupliquer en courbe plate n'apprend
+        rien et double le nombre de cartes à l'écran.
+        """
+        chemin = self.dossier / "bilan.json"
+        chemin.write_text(json.dumps(bilan, indent=2, ensure_ascii=False) + "\n")
 
     def fermer(self) -> None:
         if self._writer is not None:

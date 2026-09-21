@@ -106,9 +106,11 @@ def main() -> None:
 
             run.mesurer(agreger([resultats]), pas=n)
 
+        # Le bilan est un chiffre unique, pas une série temporelle : il va dans
+        # un fichier à côté des courbes, pas dans TensorBoard — sinon il double
+        # chaque métrique sous un préfixe qui lui fait perdre son sens.
         bilan = agreger(episodes)
-        run.mesurer({f"bilan/{k.split('/', 1)[1]}": v for k, v in bilan.items()},
-                    pas=args.episodes)
+        run.enregistrer_bilan(bilan)
 
         print("\n  bilan sur", args.episodes, "épisodes :")
         for cle, valeur in sorted(bilan.items()):
