@@ -32,3 +32,14 @@ venv/
 .DS_Store
 .idea/
 .vscode/
+
+# Points de montage créés par Docker, toujours vides.
+# /app est un montage de simulation/, donc monter ../training sur /app/training
+# oblige Docker à créer simulation/training sur le disque. Ce ne sont pas des
+# doublons : si un fichier y apparaît, c'est qu'une commande a tourné sans
+# docker-compose.override.yml.
+simulation/training/
+simulation/submission/
+simulation/logs/
+simulation/runs/
+simulation/recordings/

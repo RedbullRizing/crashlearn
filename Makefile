@@ -100,6 +100,9 @@ verify:                  ## Vérifie un pilote : make verify DRIVER=driver2
 verify-gp:               ## Vérifie la livraison complète (mode tournoi)
 	$(DC) run --rm sim python verify_submission.py --submission submission/ --grandprix
 
-clean:                   ## Arrête les conteneurs et supprime les enregistrements
-	$(DC) down --remove-orphans
+clean:                   ## Arrête les conteneurs, purge enregistrements et points de montage
+	@$(DC) down --remove-orphans 2>/dev/null || echo "  Docker non démarré — conteneurs ignorés"
 	rm -f recordings/*.npz recordings/*.mp4
+	@for d in training submission logs runs recordings; do \
+	   rmdir "simulation/$$d" 2>/dev/null && echo "  supprimé simulation/$$d" || true; \
+	 done

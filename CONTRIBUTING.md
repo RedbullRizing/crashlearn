@@ -46,6 +46,8 @@ simulation/    fourni par Epitech, non modifié
 logs/ runs/ recordings/   artefacts, hors suivi de version
 ```
 
+Docker crée dans `simulation/` cinq dossiers vides — `training/`, `submission/`, `logs/`, `runs/`, `recordings/`. Ce ne sont pas des doublons : `/app` est un montage de `simulation/`, donc monter `../training` sur `/app/training` oblige Docker à créer le point de montage sur le disque. Ils restent vides. **Si un fichier y apparaît, c'est qu'une commande a tourné sans l'override** — vos fichiers sont au mauvais endroit. `make clean` les supprime.
+
 `simulation/docker-compose.override.yml` est le seul fichier que nous ajoutons dans `simulation/` : il monte `training/` et `submission/` dans le conteneur, que le compose fourni ne voit pas.
 
 `agent.py` ne peut importer que `onnxruntime`, `numpy` et `os` : `features.py` est donc recopié dans chaque dossier pilote. C'est voulu, pas un oubli — voir le [contrat de soumission](https://linear.app/crash-and-learn/document/contrat-de-soumission-et-export-onnx-a54c16368b2b).
