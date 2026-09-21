@@ -19,7 +19,6 @@ x-service: &service
   volumes:
     - ./training:/app/training
     - ./submission:/app/submission
-    - ./logs:/app/logs
     - ./runs:/app/runs
     - ./recordings:/app/recordings
 
@@ -41,4 +40,4 @@ services:
     <<: *service
     ports:
       - "6006:6006"
-    command: tensorboard --logdir /app/logs --host 0.0.0.0 --port 6006
+    command: tensorboard --logdir /app/runs --host 0.0.0.0 --port 6006

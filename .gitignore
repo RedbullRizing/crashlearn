@@ -1,7 +1,5 @@
 # Artefacts d'entraînement — volumineux et reproductibles, jamais versionnés.
 # Convention de nommage pour les retrouver : runs/<pilote>-<AAAAMMJJ>-<algo>/
-logs/*
-!logs/.gitkeep
 runs/*
 !runs/.gitkeep
 recordings/*
@@ -37,3 +35,6 @@ venv/
 # Chaque membre télécharge l'archive et la décompresse ici. Version de référence
 # notée dans CONTRIBUTING.md : tout le monde doit avoir la même.
 simulation/
+
+# Manifestes de comparaison du simulateur, locaux
+manifest-*.txt
