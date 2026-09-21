@@ -33,13 +33,7 @@ venv/
 .idea/
 .vscode/
 
-# Points de montage créés par Docker, toujours vides.
-# /app est un montage de simulation/, donc monter ../training sur /app/training
-# oblige Docker à créer simulation/training sur le disque. Ce ne sont pas des
-# doublons : si un fichier y apparaît, c'est qu'une commande a tourné sans
-# docker-compose.override.yml.
-simulation/training/
-simulation/submission/
-simulation/logs/
-simulation/runs/
-simulation/recordings/
+# Simulateur fourni par Epitech — 163 fichiers, ~12 Mo, non versionné.
+# Chaque membre télécharge l'archive et la décompresse ici. Version de référence
+# notée dans CONTRIBUTING.md : tout le monde doit avoir la même.
+simulation/
