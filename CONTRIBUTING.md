@@ -2,6 +2,20 @@
 
 ## Démarrage
 
+### 1. Le simulateur
+
+`simulation/` **n'est pas versionné** : 163 fichiers pour 12 Mo qui ne nous appartiennent pas et qu'on ne modifie jamais. Télécharge l'archive sur l'intranet Epitech et décompresse-la à la racine du dépôt, dans un dossier nommé `simulation/`.
+
+Vérifie ensuite que tu as la même version que le reste de l'équipe :
+
+```bash
+make sim-hash      # doit afficher : 53f1641c4444a0e1
+```
+
+Si l'empreinte diffère, tu n'as pas la même version et vos résultats ne seront pas comparables. C'est déjà arrivé : une première archive avait une API des adversaires différente.
+
+### 2. L'image Docker
+
 Tout passe par le conteneur : il épingle la chaîne ONNX (`onnx 1.22`, `onnxruntime 1.29`, `torch 2.13+cpu`) avec laquelle le tournoi chargera nos modèles, et le couple `numpy 2.4.6` / `numba 0.65.1` sans lequel la simulation ne démarre pas. Un modèle exporté hors de cette image risque le *Unsupported model IR version* le jour J.
 
 Les commandes passent par le `Makefile` à la racine. `make` seul liste tout.
@@ -11,6 +25,8 @@ make build          # construit l'image, ~10 min la première fois
 make check          # vérifie que le simulateur tourne
 make test           # les tests fournis par Epitech
 ```
+
+### 3. Au quotidien
 
 Voir une course — on enregistre, puis on rejoue : le simulateur est headless, il n'y a pas de fenêtre live.
 
@@ -42,13 +58,11 @@ make verify-gp               # la livraison complète
 ```
 training/      env.py, features.py, train.py — dépend de gymnasium et sb3
 submission/    livré au tournoi : driver1..4 et champion, rien d'autre
-simulation/    fourni par Epitech, non modifié
+simulation/    fourni par Epitech, non versionné, jamais modifié
 logs/ runs/ recordings/   artefacts, hors suivi de version
 ```
 
-Docker crée dans `simulation/` cinq dossiers vides — `training/`, `submission/`, `logs/`, `runs/`, `recordings/`. Ce ne sont pas des doublons : `/app` est un montage de `simulation/`, donc monter `../training` sur `/app/training` oblige Docker à créer le point de montage sur le disque. Ils restent vides. **Si un fichier y apparaît, c'est qu'une commande a tourné sans l'override** — vos fichiers sont au mauvais endroit. `make clean` les supprime.
-
-`simulation/docker-compose.override.yml` est le seul fichier que nous ajoutons dans `simulation/` : il monte `training/` et `submission/` dans le conteneur, que le compose fourni ne voit pas.
+`docker-compose.yml` est à nous. Le simulateur est construit dans l'image (son Dockerfile fait `COPY . /app`) et n'est pas monté depuis le disque : seuls nos dossiers le sont. On ne touche à aucun fichier d'Epitech, donc une nouvelle archive se remplace sans conflit.
 
 `agent.py` ne peut importer que `onnxruntime`, `numpy` et `os` : `features.py` est donc recopié dans chaque dossier pilote. C'est voulu, pas un oubli — voir le [contrat de soumission](https://linear.app/crash-and-learn/document/contrat-de-soumission-et-export-onnx-a54c16368b2b).
 
