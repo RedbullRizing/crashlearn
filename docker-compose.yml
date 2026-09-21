@@ -1,0 +1,44 @@
+# Crash & Learn — notre configuration Docker.
+#
+# Le simulateur d'Epitech est construit dans l'image (son Dockerfile fait COPY . /app)
+# et n'est pas monté depuis le disque : il ne bouge pas, et on ne le modifie jamais.
+# Seuls nos propres dossiers sont montés, pour que le code et les modèles soient
+# visibles dans le conteneur sans reconstruire l'image à chaque changement.
+#
+# Conséquence : `simulation/` n'est pas versionné. Chaque membre télécharge l'archive
+# d'Epitech et la décompresse ici — voir CONTRIBUTING.md.
+
+x-service: &service
+  build:
+    context: ./simulation
+    target: base
+  image: crashlearn-sim:base
+  working_dir: /app
+  environment:
+    MPLBACKEND: Agg
+  volumes:
+    - ./training:/app/training
+    - ./submission:/app/submission
+    - ./logs:/app/logs
+    - ./runs:/app/runs
+    - ./recordings:/app/recordings
+
+services:
+
+  sim:
+    <<: *service
+    command: python demo.py
+
+  recorder:
+    <<: *service
+    command: python sim_recorder.py --steps 500 --num-cars 1 --out /app/recordings/episode.npz
+
+  replay:
+    <<: *service
+    command: python viz_replay.py --npz /app/recordings/episode.npz
+
+  tensorboard:
+    <<: *service
+    ports:
+      - "6006:6006"
+    command: tensorboard --logdir /app/logs --host 0.0.0.0 --port 6006

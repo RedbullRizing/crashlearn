@@ -23,4 +23,6 @@ Dépôt principal : [RedbullRizing/crashlearn](https://github.com/RedbullRizing/
 
 Une branche par issue, avec le [nom généré par Linear](https://linear.app/docs/github#branch-name) ; le lien avec le ticket passe par les [magic words](https://linear.app/docs/github#magic-words) dans la PR ou le message de commit. Backlog partagé, tâches prises librement et petites PR ; aucun domaine réservé.
 
-Le socle n'est pas encore initialisé. Les commandes de développement — construction de l'image Docker, lancement d'un entraînement, vérification d'une soumission — seront ajoutées avec l'arborescence. Le cadrage est maintenu dans Linear ; ce dépôt accueillera le code d'entraînement et le dossier `submission/` livré.
+Le simulateur d'Epitech n'est pas versionné : télécharge l'archive et décompresse-la en `simulation/`, puis `make sim-hash` pour vérifier que tu as la même version que l'équipe. Toutes les commandes passent par le `Makefile` — voir [`CONTRIBUTING.md`](CONTRIBUTING.md).
+
+Le code d'entraînement n'existe pas encore. Le cadrage est maintenu dans Linear ; ce dépôt accueille `training/` et le dossier `submission/` livré au tournoi.

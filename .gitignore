@@ -32,3 +32,8 @@ venv/
 .DS_Store
 .idea/
 .vscode/
+
+# Simulateur fourni par Epitech — 163 fichiers, ~12 Mo, non versionné.
+# Chaque membre télécharge l'archive et la décompresse ici. Version de référence
+# notée dans CONTRIBUTING.md : tout le monde doit avoir la même.
+simulation/
