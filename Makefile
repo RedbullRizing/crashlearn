@@ -61,13 +61,19 @@ sim-check:
 	  echo "  Voir CONTRIBUTING.md."; \
 	  exit 1; }
 
+# shasum n'écrit pas la même chose partout : « <hash>  ./f » sous macOS, mais
+# « <hash> *./f » en mode binaire sous Windows. Comme on rehashe cette sortie,
+# l'étoile suffisait à donner deux empreintes différentes pour des fichiers
+# pourtant identiques. On normalise donc le format avant de hasher.
+SIM_NORM := awk '{ h=$$1; p=$$2; sub(/^\*/,"",p); sub(/\r$$/,"",p); print h" "p }'
+
 sim-hash: sim-check      ## Empreinte du simulateur — doit être identique chez tous
 	@n=$$(cd simulation && $(SIM_LISTE) | wc -l | tr -d ' '); \
-	 h=$$(cd simulation && $(SIM_LISTE) | tr '\n' '\0' | xargs -0 $(SHASUM) | $(SHASUM) | cut -c1-16); \
+	 h=$$(cd simulation && $(SIM_LISTE) | tr '\n' '\0' | xargs -0 $(SHASUM) | $(SIM_NORM) | $(SHASUM) | cut -c1-16); \
 	 echo "  $$h   ($$n fichiers)"
 
 sim-manifest: sim-check  ## Écrit manifest-<user>.txt, une empreinte par fichier
-	@cd simulation && $(SIM_LISTE) | tr '\n' '\0' | xargs -0 $(SHASUM) > ../manifest-$(USER).txt
+	@cd simulation && $(SIM_LISTE) | tr '\n' '\0' | xargs -0 $(SHASUM) | $(SIM_NORM) > ../manifest-$(USER).txt
 	@echo "  manifest-$(USER).txt écrit — à comparer avec 'diff manifest-a.txt manifest-b.txt'"
 
 

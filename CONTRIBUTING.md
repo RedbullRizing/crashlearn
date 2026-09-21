@@ -9,7 +9,7 @@
 Vérifie ensuite que tu as la même version que le reste de l'équipe :
 
 ```bash
-make sim-hash      # doit afficher : 53f1641c4444a0e1
+make sim-hash      # doit afficher : 85e85fbe139c5a05
 ```
 
 Si l'empreinte diffère, tu n'as pas la même version et vos résultats ne seront pas comparables. C'est déjà arrivé : une première archive avait une API des adversaires différente.
