@@ -1,18 +1,18 @@
-"""Vérifie la chaîne de suivi de bout en bout, sans attendre train.py.
+"""Fait tourner des courses et enregistre leurs résultats.
 
-Fait rouler quelques épisodes avec un pilote naïf — il suit la direction la plus
-dégagée du LiDAR — et envoie les métriques dans TensorBoard via un vrai run.
-Le pilote est volontairement médiocre : il abandonne, ce qui exerce justement
-le code de détection des causes d'abandon.
+    make courses DRIVER=driver1 CIRCUIT=Spa EPISODES=5
 
-    make suivi-demo
+Joue N épisodes, mesure chaque course avec `metrics.py` et envoie le tout dans
+TensorBoard via un `Run`. C'est la boucle qui servira de banc d'évaluation :
+faire rouler une politique un nombre figé de fois, sur des circuits figés, avec
+des graines figées, et en sortir des chiffres comparables entre politiques.
 
-Ce n'est pas un entraînement, juste la preuve que runs.py et metrics.py
-fonctionnent contre le vrai simulateur.
+Aujourd'hui elle conduit avec un pilote écrit à la main, qui vise simplement la
+direction la plus dégagée du LiDAR. Il est mauvais et ne boucle jamais un tour,
+donc `taux_completion` et les temps au tour restent à zéro. Il sera remplacé par
+`pure_pursuit` (CRA-8), puis par les politiques entraînées (CRA-34).
 
-Limite assumée : ce pilote ne boucle jamais un tour, donc `taux_completion`,
-`tour/temps_moyen` et `tour/meilleur` restent à zéro. Ces trois-là seront
-exercés par la référence pure pursuit de CRA-8.
+Seule la fonction `piloter()` est à remplacer : tout le reste tient.
 """
 
 from __future__ import annotations

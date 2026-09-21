@@ -27,20 +27,24 @@ RUN := $(DC) run --rm -e GIT_SHA=$(GIT_SHA) -e GIT_DIRTY=$(GIT_DIRTY)
 # --- paramètres, surchargeables en ligne de commande -----------------------
 # Exemple : make record NAME=grand-crash CARS=4 CTRL=random
 # CTRL : pure_pursuit | random | submission
-NAME   ?= essai
-STEPS  ?= 1500
-CARS   ?= 1
-CTRL   ?= pure_pursuit
-DRIVER ?= driver1
+NAME     ?= essai
+STEPS    ?= 1500
+CARS     ?= 1
+CTRL     ?= pure_pursuit
+DRIVER   ?= driver1
+GRAINE   ?= 42
+EPISODES ?= 5
+CIRCUIT  ?= example
 
 .DEFAULT_GOAL := help
-.PHONY: help sim-check sim-hash suivi-demo build check test venv record replay video train board board-stop verify verify-gp clean
+.PHONY: help sim-check sim-hash courses build check test venv record replay video train board board-stop verify verify-gp clean
 
 help:                    ## Affiche cette aide
 	@grep -E '^[a-z-]+:.*?## .*$$' $(MAKEFILE_LIST) \
 		| awk 'BEGIN {FS = ":.*?## "}; {printf "  \033[36m%-12s\033[0m %s\n", $$1, $$2}'
 	@echo ""
-	@echo "  Paramètres : NAME=$(NAME) STEPS=$(STEPS) CARS=$(CARS) CTRL=$(CTRL) DRIVER=$(DRIVER)"
+	@echo "  Paramètres : NAME=$(NAME) STEPS=$(STEPS) CARS=$(CARS) CTRL=$(CTRL)"
+	@echo "               DRIVER=$(DRIVER) GRAINE=$(GRAINE) EPISODES=$(EPISODES) CIRCUIT=$(CIRCUIT)"
 
 # --- mise en route ---------------------------------------------------------
 sim-check:
@@ -101,8 +105,10 @@ video:                   ## Exporte la course en MP4 -> recordings/<NAME>.mp4
 train:                   ## Entraîne un pilote : make train DRIVER=driver2
 	$(RUN) sim python -m training.train --driver $(DRIVER)
 
-suivi-demo:              ## Vérifie la chaîne de suivi sur de vraies courses
-	$(RUN) sim python -m training.demo_suivi --pilote $(DRIVER)
+courses:                 ## Fait tourner des courses : make courses CIRCUIT=Spa GRAINE=7
+	$(RUN) sim python -m training.courses \
+		--pilote $(DRIVER) --episodes $(EPISODES) \
+		--graine $(GRAINE) --circuit $(CIRCUIT)
 
 board:                   ## Démarre TensorBoard sur http://localhost:6006
 	$(DC) up -d tensorboard
