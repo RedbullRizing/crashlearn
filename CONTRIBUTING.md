@@ -59,7 +59,7 @@ make verify-gp               # la livraison complète
 training/      env.py, features.py, train.py — dépend de gymnasium et sb3
 submission/    livré au tournoi : driver1..4 et champion, rien d'autre
 simulation/    fourni par Epitech, non versionné, jamais modifié
-logs/ runs/ recordings/   artefacts, hors suivi de version
+runs/ recordings/          artefacts, hors suivi de version
 ```
 
 `docker-compose.yml` est à nous. Le simulateur est construit dans l'image (son Dockerfile fait `COPY . /app`) et n'est pas monté depuis le disque : seuls nos dossiers le sont. On ne touche à aucun fichier d'Epitech, donc une nouvelle archive se remplace sans conflit.

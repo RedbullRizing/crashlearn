@@ -1,7 +1,5 @@
 # Artefacts d'entraînement — volumineux et reproductibles, jamais versionnés.
 # Convention de nommage pour les retrouver : runs/<pilote>-<AAAAMMJJ>-<algo>/
-logs/*
-!logs/.gitkeep
 runs/*
 !runs/.gitkeep
 recordings/*

@@ -19,7 +19,10 @@ else
   endif
 endif
 
+GIT_SHA   := $(shell git rev-parse --short HEAD 2>/dev/null || echo inconnu)
+GIT_DIRTY := $(shell test -n "$$(git status --porcelain 2>/dev/null)" && echo 1 || echo 0)
 DC := docker compose
+RUN := $(DC) run --rm -e GIT_SHA=$(GIT_SHA) -e GIT_DIRTY=$(GIT_DIRTY)
 
 # --- paramètres, surchargeables en ligne de commande -----------------------
 # Exemple : make record NAME=grand-crash CARS=4 CTRL=random
@@ -31,7 +34,7 @@ CTRL   ?= pure_pursuit
 DRIVER ?= driver1
 
 .DEFAULT_GOAL := help
-.PHONY: help sim-check sim-hash build check test venv record replay video train board board-stop verify verify-gp clean
+.PHONY: help sim-check sim-hash suivi-demo build check test venv record replay video train board board-stop verify verify-gp clean
 
 help:                    ## Affiche cette aide
 	@grep -E '^[a-z-]+:.*?## .*$$' $(MAKEFILE_LIST) \
@@ -96,7 +99,10 @@ video:                   ## Exporte la course en MP4 -> recordings/<NAME>.mp4
 
 # --- entraîner -------------------------------------------------------------
 train:                   ## Entraîne un pilote : make train DRIVER=driver2
-	$(DC) run --rm sim python training/train.py --driver $(DRIVER)
+	$(RUN) sim python -m training.train --driver $(DRIVER)
+
+suivi-demo:              ## Vérifie la chaîne de suivi sur de vraies courses
+	$(RUN) sim python -m training.demo_suivi --pilote $(DRIVER)
 
 board:                   ## Démarre TensorBoard sur http://localhost:6006
 	$(DC) up -d tensorboard
