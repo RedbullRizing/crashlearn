@@ -30,7 +30,7 @@ SHASUM    := $(shell command -v shasum >/dev/null 2>&1 && echo 'shasum -a 256' |
 SIM_LISTE := find . -type f -not -path './__pycache__/*' -not -name '*.pyc' -not -name '.DS_Store' | LC_ALL=C sort
 
 DC := docker compose
-RUN := $(DC) run --rm -e GIT_SHA=$(GIT_SHA) -e GIT_DIRTY=$(GIT_DIRTY)
+DC_RUN := $(DC) run --rm -e GIT_SHA=$(GIT_SHA) -e GIT_DIRTY=$(GIT_DIRTY)
 
 # --- paramètres, surchargeables en ligne de commande -----------------------
 # Exemple : make record NAME=spa CIRCUIT=Spa CTRL=pure_pursuit
@@ -46,7 +46,7 @@ EPISODES ?= 5
 CIRCUIT  ?= example
 
 .DEFAULT_GOAL := help
-.PHONY: help sim-check sim-hash sim-manifest courses runs build check test venv record replay video train board board-stop verify verify-gp clean
+.PHONY: help sim-check sim-hash sim-manifest courses runs garder build check test venv record replay video train board board-stop verify verify-gp clean
 
 help:                    ## Affiche cette aide
 	@grep -E '^[a-z-]+:.*?## .*$$' $(MAKEFILE_LIST) \
@@ -137,10 +137,10 @@ train:                   ## Entraîne un pilote : make train DRIVER=driver2
 	  echo "  training/train.py n'existe pas encore (CRA-71)."; \
 	  echo "  En attendant : make courses pour le banc d'évaluation."; \
 	  exit 1; }
-	$(RUN) sim python -m training.train --driver $(DRIVER)
+	$(DC_RUN) sim python -m training.train --driver $(DRIVER)
 
 courses:                 ## Fait tourner des courses : make courses CIRCUIT=Spa GRAINE=7
-	$(RUN) sim python -m training.courses \
+	$(DC_RUN) sim python -m training.courses \
 		--pilote $(DRIVER) --episodes $(EPISODES) \
 		--graine $(GRAINE) --circuit $(CIRCUIT)
 
@@ -150,6 +150,10 @@ board:                   ## Démarre TensorBoard sur http://localhost:6006
 
 runs:                    ## Tableau des runs et de leur bilan : make runs [DRIVER=driver2]
 	@$(PY3) training/lister.py $(if $(filter command line,$(origin DRIVER)),--pilote $(DRIVER))
+
+garder:                  ## Archive un run pour le garder : make garder RUN=<nom> NOTE="..."
+	@test -n "$(RUN)" || { echo "  Préciser le run : make garder RUN=<nom>  (liste : make runs)"; exit 1; }
+	@$(PY3) training/garder.py --run "$(RUN)" --note "$(NOTE)"
 
 board-stop:              ## Arrête TensorBoard
 	$(DC) stop tensorboard

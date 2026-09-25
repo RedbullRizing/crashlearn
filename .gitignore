@@ -1,11 +1,15 @@
 # Artefacts d'entraînement — volumineux et reproductibles, jamais versionnés.
-# Convention de nommage pour les retrouver : runs/<pilote>-<AAAAMMJJ>-<algo>/
+# Convention de nommage pour les retrouver : runs/<pilote>-<AAAAMMJJ>-<HHMMSS>-<algo>/
 runs/*
 !runs/.gitkeep
 recordings/*
 !recordings/.gitkeep
 *.npz
 events.out.tfevents.*
+
+# Exception : les runs gardés par `make garder` sont versionnés, courbes comprises.
+# garder.py n'y copie jamais de modèle ni d'enregistrement.
+!archives/**/events.out.tfevents.*
 
 # Exception : fixture de test du simulateur fourni, elle fait partie de son code
 !simulation/gym/f110_gym/unittest/*.npz

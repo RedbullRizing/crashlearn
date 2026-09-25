@@ -20,6 +20,7 @@ x-service: &service
     - ./training:/app/training
     - ./submission:/app/submission
     - ./runs:/app/runs
+    - ./archives:/app/archives
     - ./recordings:/app/recordings
 
 services:
@@ -36,8 +37,12 @@ services:
     <<: *service
     command: python viz_replay.py --npz /app/recordings/episode.npz
 
+  # Seul service qui reste allumé : lancé par `make board`, il redémarre avec Docker
+  # jusqu'à `make board-stop`. Il lit deux dossiers, préfixés dans l'interface :
+  # archives/ (runs gardés, versionnés) et runs/ (brouillon local).
   tensorboard:
     <<: *service
+    restart: unless-stopped
     ports:
       - "6006:6006"
-    command: tensorboard --logdir /app/runs --host 0.0.0.0 --port 6006
+    command: tensorboard --logdir_spec archives:/app/archives,local:/app/runs --host 0.0.0.0 --port 6006
