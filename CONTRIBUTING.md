@@ -49,6 +49,26 @@ make train DRIVER=driver1                            # dès que training/train.p
 make board
 ```
 
+### 4. Suivre ses runs
+
+Chaque run (`make courses`, puis `make train`) crée son dossier dans `runs/` : les courbes TensorBoard, `meta.json` (graine, commit, configuration, versions) et `bilan.json` (chiffres finaux).
+
+```bash
+make board          # TensorBoard sur http://localhost:6006, à laisser tourner
+make runs           # tableau des bilans, sans navigateur
+make runs DRIVER=driver2
+make board-stop
+```
+
+- TensorBoard tourne dans le conteneur : rien à installer, `make build` suffit. Il relit `runs/` en continu, un nouveau run apparaît sans redémarrage.
+- Pour isoler un pilote, taper `driver2` dans le filtre des runs, en haut à gauche.
+- `runs/` est local et hors dépôt : chacun ne voit que ses propres runs. Pour comparer entre membres, copier les dossiers de runs voulus (quelques Ko) dans son propre `runs/`.
+- Un run marqué « dépôt modifié » dans son `meta.json` a été lancé avec du code non commité : il n'est pas reproductible, à éviter pour tout résultat qu'on compte garder.
+- Sous Linux, les fichiers écrits par le conteneur appartiennent à root : `sudo chown -R $USER runs/` pour pouvoir les supprimer.
+- Port 6006 déjà pris : `make board-stop`, ou arrêter l'autre TensorBoard.
+
+### 5. Vérifier une soumission
+
 Vérifier une soumission — c'est le filtre exact de l'évaluation, à lancer tôt et souvent :
 
 ```bash
