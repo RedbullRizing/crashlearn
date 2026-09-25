@@ -49,21 +49,30 @@ make train DRIVER=driver1                            # dès que training/train.p
 make board
 ```
 
-### 4. Suivre ses runs
+### 4. Suivre et garder ses runs
 
 Chaque run (`make courses`, puis `make train`) crée son dossier dans `runs/` : les courbes TensorBoard, `meta.json` (graine, commit, configuration, versions) et `bilan.json` (chiffres finaux).
 
+`runs/` est un **brouillon local** : hors dépôt, propre à chaque machine, perdu au prochain nettoyage. Les runs à conserver — ceux qui montrent l'évolution d'un pilote, pour le rapport et la soutenance — passent dans `archives/`, **versionné** :
+
 ```bash
-make board          # TensorBoard sur http://localhost:6006, à laisser tourner
-make runs           # tableau des bilans, sans navigateur
+make runs                                             # repérer le run
+make garder RUN=driver2-20261115-143012-ppo NOTE="première reward qui boucle un tour"
+git add archives/driver2-20261115-143012-ppo && git commit -m "chore(archives): …"
+```
+
+`make garder` ne copie que le léger — courbes, `meta.json`, `bilan.json`, configuration — plus un `note.md` avec la note donnée. Les modèles restent dans `runs/` : un modèle livré va dans `submission/`. Il prévient si le run a été lancé avec du code non commité : un tel run n'est pas reproductible, mieux vaut ne pas l'archiver.
+
+```bash
+make board          # TensorBoard sur http://localhost:6006, une fois pour toutes
+make runs           # tableau des bilans, archives et brouillon
 make runs DRIVER=driver2
 make board-stop
 ```
 
-- TensorBoard tourne dans le conteneur : rien à installer, `make build` suffit. Il relit `runs/` en continu, un nouveau run apparaît sans redémarrage.
-- Pour isoler un pilote, taper `driver2` dans le filtre des runs, en haut à gauche.
-- `runs/` est local et hors dépôt : chacun ne voit que ses propres runs. Pour comparer entre membres, copier les dossiers de runs voulus (quelques Ko) dans son propre `runs/`.
-- Un run marqué « dépôt modifié » dans son `meta.json` a été lancé avec du code non commité : il n'est pas reproductible, à éviter pour tout résultat qu'on compte garder.
+- TensorBoard lit les deux dossiers : les runs apparaissent préfixés `archives/` ou `local/`. Taper `archives/` dans le filtre des runs, en haut à gauche, ne montre que les runs gardés — c'est la vue à présenter. Taper `driver2` isole un pilote.
+- Après un `git pull`, les runs archivés par les autres membres apparaissent dans TensorBoard, sans rien faire.
+- TensorBoard tourne dans le conteneur, rien à installer. Il relit ses dossiers en continu, et redémarre avec Docker jusqu'à `make board-stop` ou `make clean`.
 - Sous Linux, les fichiers écrits par le conteneur appartiennent à root : `sudo chown -R $USER runs/` pour pouvoir les supprimer.
 - Port 6006 déjà pris : `make board-stop`, ou arrêter l'autre TensorBoard.
 
@@ -85,6 +94,7 @@ training/      env.py, features.py, train.py — dépend de gymnasium et sb3
 submission/    livré au tournoi : driver1..4 et champion, rien d'autre
 simulation/    fourni par Epitech, non versionné, jamais modifié
 runs/ recordings/          artefacts, hors suivi de version
+archives/      runs gardés avec make garder, versionnés
 ```
 
 `docker-compose.yml` est à nous. Le simulateur est construit dans l'image (son Dockerfile fait `COPY . /app`) et n'est pas monté depuis le disque : seuls nos dossiers le sont. On ne touche à aucun fichier d'Epitech, donc une nouvelle archive se remplace sans conflit.
@@ -122,4 +132,7 @@ N'utilisez `Closes` que lorsque **tous** les critères d'acceptation du ticket s
 
 Modèles, enregistrements et journaux sont hors suivi de version. Pour les retrouver, une seule convention : `runs/<pilote>-<AAAAMMJJ>-<HHMMSS>-<algo>/`, par exemple `runs/driver1-20261115-143012-ppo/`. Le dossier est créé par `training/runs.py`, avec un `meta.json` (graine, commit, config) et un `bilan.json`.
 
-Seule exception, parce que c'est un livrable : `submission/<pilote>/model.onnx` et son `.onnx.data` sont versionnés.
+Deux exceptions :
+
+- `submission/<pilote>/model.onnx` et son `.onnx.data`, parce que c'est un livrable ;
+- `archives/`, les runs gardés avec `make garder` — courbes et bilans, jamais de modèle.
