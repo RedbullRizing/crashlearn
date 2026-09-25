@@ -7,7 +7,7 @@ une dizaine de modèles dont plus personne ne sait lequel marchait.
 Chaque run vit donc dans son propre dossier, nommé selon une convention unique,
 et pose à côté de ses courbes un `meta.json` qui dit exactement d'où il vient.
 
-    runs/driver1-20261115-1430-ppo/
+    runs/driver1-20261115-143012-ppo/
     ├── meta.json          qui, quoi, quand, avec quel code
     ├── bilan.json         les chiffres finaux du run
     └── events.out.*       les courbes lues par TensorBoard
