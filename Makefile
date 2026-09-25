@@ -31,7 +31,8 @@ DC := docker compose
 RUN := $(DC) run --rm -e GIT_SHA=$(GIT_SHA) -e GIT_DIRTY=$(GIT_DIRTY)
 
 # --- paramètres, surchargeables en ligne de commande -----------------------
-# Exemple : make record NAME=grand-crash CARS=4 CTRL=random
+# Exemple : make record NAME=spa CIRCUIT=Spa CTRL=pure_pursuit
+#           make record NAME=d2 CTRL=submission DRIVER=driver2
 # CTRL : pure_pursuit | random | submission
 NAME     ?= essai
 STEPS    ?= 1500
@@ -105,9 +106,18 @@ venv:                    ## Installe l'environnement local pour l'affichage
 	$(PY) -m pip install --quiet numpy pillow pyyaml matplotlib
 
 # --- voir une course -------------------------------------------------------
+# Avec CTRL=submission, on pointe explicitement sur submission/$(DRIVER) : sans
+# --submission, sim_recorder charge submission/ et prend le premier sous-dossier
+# par ordre alphabétique (champion, puis driver1) — jamais driver2 à driver4.
+# Un dossier pilote seul ne se charge que pour CARS=1 (voir agent_loader.py).
+ifeq ($(CTRL),submission)
+  RECORD_SUB := --submission submission/$(DRIVER)
+endif
+
 record:                  ## Enregistre une course -> recordings/<NAME>.npz
 	$(DC) run --rm recorder python sim_recorder.py \
 		--steps $(STEPS) --num-cars $(CARS) --controller $(CTRL) \
+		--map $(CIRCUIT) --seed $(GRAINE) $(RECORD_SUB) \
 		--out /app/recordings/$(NAME).npz
 
 replay:                  ## Ouvre la course dans une fenêtre (nécessite make venv)
@@ -121,6 +131,10 @@ video:                   ## Exporte la course en MP4 -> recordings/<NAME>.mp4
 
 # --- entraîner -------------------------------------------------------------
 train:                   ## Entraîne un pilote : make train DRIVER=driver2
+	@test -f training/train.py || { \
+	  echo "  training/train.py n'existe pas encore (CRA-71)."; \
+	  echo "  En attendant : make courses pour le banc d'évaluation."; \
+	  exit 1; }
 	$(RUN) sim python -m training.train --driver $(DRIVER)
 
 courses:                 ## Fait tourner des courses : make courses CIRCUIT=Spa GRAINE=7

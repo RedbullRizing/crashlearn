@@ -10,7 +10,9 @@ des graines figées, et en sortir des chiffres comparables entre politiques.
 Aujourd'hui elle conduit avec un pilote écrit à la main, qui vise simplement la
 direction la plus dégagée du LiDAR. Il est mauvais et ne boucle jamais un tour,
 donc `taux_completion` et les temps au tour restent à zéro. Il sera remplacé par
-`pure_pursuit` (CRA-8), puis par les politiques entraînées (CRA-34).
+les politiques entraînées (CRA-71). La référence `pure_pursuit` de
+`sim_recorder.py` ne peut pas le remplacer : elle lit la pose exacte et la ligne
+centrale du simulateur, pas l'observation — elle se regarde avec `make record`.
 
 Seule la fonction `piloter()` est à remplacer : tout le reste tient.
 """

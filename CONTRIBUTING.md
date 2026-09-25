@@ -31,16 +31,21 @@ make test           # les tests fournis par Epitech
 Voir une course — on enregistre, puis on rejoue : le simulateur est headless, il n'y a pas de fenêtre live.
 
 ```bash
-make record NAME=essai CARS=1 CTRL=pure_pursuit
+make record NAME=essai CTRL=pure_pursuit                 # circuit example
+make record NAME=spa   CTRL=pure_pursuit CIRCUIT=Spa GRAINE=7
+make record NAME=d2    CTRL=submission DRIVER=driver2    # un pilote précis
 make venv           # une fois, installe de quoi afficher
 make replay NAME=essai     # fenêtre interactive
 make video  NAME=essai     # ou export MP4
 ```
 
+`CTRL=submission` charge `submission/$(DRIVER)` et ne marche qu'avec `CARS=1` : un dossier pilote seul n'est pas recopié sur plusieurs voitures. `pure_pursuit` est la référence d'Epitech : il lit la pose exacte et la ligne centrale, à 2 m/s fixes — un repère, pas un pilote livrable.
+
 Entraîner et suivre les courbes sur <http://localhost:6006> :
 
 ```bash
-make train DRIVER=driver1
+make courses DRIVER=driver1 CIRCUIT=Spa EPISODES=5   # banc d'évaluation, écrit dans runs/
+make train DRIVER=driver1                            # dès que training/train.py existe (CRA-71)
 make board
 ```
 
@@ -95,6 +100,6 @@ N'utilisez `Closes` que lorsque **tous** les critères d'acceptation du ticket s
 
 ## Artefacts
 
-Modèles, enregistrements et journaux sont hors suivi de version. Pour les retrouver, une seule convention : `runs/<pilote>-<AAAAMMJJ>-<algo>/`, par exemple `runs/driver1-20261115-ppo/`.
+Modèles, enregistrements et journaux sont hors suivi de version. Pour les retrouver, une seule convention : `runs/<pilote>-<AAAAMMJJ>-<HHMMSS>-<algo>/`, par exemple `runs/driver1-20261115-143012-ppo/`. Le dossier est créé par `training/runs.py`, avec un `meta.json` (graine, commit, config) et un `bilan.json`.
 
 Seule exception, parce que c'est un livrable : `submission/<pilote>/model.onnx` et son `.onnx.data` sont versionnés.

@@ -2,20 +2,23 @@
 
 Le simulateur signale qu'une voiture a abandonné — `agent_status` passe à 0 —
 mais il ne dit jamais **pourquoi** : `_freeze_dnf()` écrase le statut sans
-conserver la cause. On suit donc les signaux de chaque voiture à chaque pas,
-pour pouvoir attribuer la cause au moment exact de la bascule.
+conserver la cause. On la déduit au pas exact de la bascule.
 
-Les deux causes d'abandon imposées par le moteur :
+Le moteur n'a que deux causes d'abandon (`_update_stagnation_and_dnf`) :
 
-* **stagnation** — la voiture n'a pas progressé sur une fenêtre glissante de
-  4 secondes. C'est la « police » du sujet, elle frappe les politiques trop
-  prudentes qui ont appris à survivre en ralentissant.
-* **sortie de piste** — signalée par `collisions["wall"]`, qui vaut True quand
-  la voiture percute un mur *en mouvement*. Une voiture arrêtée contre un mur
-  ne déclenche rien.
+* **stagnation** — la voiture a gagné moins de 1 m d'abscisse le long du
+  circuit sur une fenêtre glissante de 10 secondes (200 pas à 20 Hz,
+  `_DNF_WINDOW_SEC` et `_DNF_MIN_GAIN_M`). C'est la « police » du sujet. Au pas
+  de la bascule, `info["stagnation"]` vaut True.
+* **sortie de piste** — le centre de la voiture dépasse la demi-largeur locale
+  de la piste plus 1 m de marge (`_OFFTRACK_MARGIN_M`). Test purement
+  géométrique : `info["stagnation"]` reste alors False.
 
-Quand aucun des deux signaux n'était actif juste avant la bascule, la cause est
-`inconnue` : c'est un cas à regarder de près, pas à ignorer.
+Une bascule sans stagnation est donc une sortie de piste, sans ambiguïté.
+
+Les chocs contre un mur (`collisions["wall"]`) ne sont **pas** une cause
+d'abandon : le moteur fait reculer la voiture, qui repart. Ils sont comptés à
+part, comme symptôme de conduite.
 """
 
 from __future__ import annotations
@@ -29,7 +32,6 @@ ARRIVE = 2
 
 CAUSE_STAGNATION = "stagnation"
 CAUSE_SORTIE = "sortie_de_piste"
-CAUSE_INCONNUE = "inconnue"
 
 
 @dataclass
@@ -73,9 +75,6 @@ class SuiviCourse:
     def __init__(self, nb_voitures: int = 1) -> None:
         self.nb_voitures = nb_voitures
         self._resultats = {i: ResultatVoiture() for i in range(nb_voitures)}
-        # Dernier signal connu avant la bascule en abandon.
-        self._stagnait = {i: False for i in range(nb_voitures)}
-        self._a_tape_mur = {i: False for i in range(nb_voitures)}
         self._pas = 0
 
     def observer(self, info: dict) -> None:
@@ -89,31 +88,20 @@ class SuiviCourse:
 
             if bool(info["collisions"]["wall"][i]):
                 resultat.chocs_mur += 1
-                self._a_tape_mur[i] = True
             if bool(info["collisions"]["vehicle"][i]):
                 resultat.chocs_voiture += 1
 
-            stagne = bool(info["stagnation"][i])
-            if stagne:
-                self._stagnait[i] = True
-
             # La bascule vers l'abandon est le seul moment où la cause est
-            # encore déductible : après, tous les signaux sont remis à zéro.
+            # lisible : dès le pas suivant, `stagnation` est remis à False.
             if statut_avant == ACTIF and statut == DNF:
-                resultat.cause_abandon = self._deduire_cause(i)
+                stagne = bool(info["stagnation"][i])
+                resultat.cause_abandon = CAUSE_STAGNATION if stagne else CAUSE_SORTIE
                 resultat.pas_avant_abandon = self._pas
 
             resultat.statut = statut
             resultat.temps_au_tour = list(info["lap_times"][i])
             resultat.tours = len(resultat.temps_au_tour)
             resultat.progression_max = float(info["max_progress"][i])
-
-    def _deduire_cause(self, i: int) -> str:
-        if self._stagnait[i]:
-            return CAUSE_STAGNATION
-        if self._a_tape_mur[i]:
-            return CAUSE_SORTIE
-        return CAUSE_INCONNUE
 
     def resultats(self) -> dict[int, ResultatVoiture]:
         return dict(self._resultats)
@@ -149,7 +137,7 @@ def agreger(episodes: list[dict[int, ResultatVoiture]], tours_requis: int = 3) -
 
     # Taux d'abandon par cause, rapporté au nombre total de voitures : c'est ce
     # qui dit s'il faut travailler la prudence ou au contraire l'agressivité.
-    for cause in (CAUSE_STAGNATION, CAUSE_SORTIE, CAUSE_INCONNUE):
+    for cause in (CAUSE_STAGNATION, CAUSE_SORTIE):
         n = sum(1 for v in abandons if v.cause_abandon == cause)
         mesures[f"abandon/{cause}"] = n / total
 
