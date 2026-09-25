@@ -9,9 +9,11 @@
 # --- détection de la plateforme -------------------------------------------
 ifeq ($(OS),Windows_NT)                 # Git Bash
   PY  := .venv/Scripts/python.exe
+  PY3 := python
   MPL := TkAgg
 else
   PY  := .venv/bin/python
+  PY3 := python3
   ifeq ($(shell uname -s),Darwin)
     MPL := MacOSX
   else
@@ -44,7 +46,7 @@ EPISODES ?= 5
 CIRCUIT  ?= example
 
 .DEFAULT_GOAL := help
-.PHONY: help sim-check sim-hash sim-manifest courses build check test venv record replay video train board board-stop verify verify-gp clean
+.PHONY: help sim-check sim-hash sim-manifest courses runs build check test venv record replay video train board board-stop verify verify-gp clean
 
 help:                    ## Affiche cette aide
 	@grep -E '^[a-z-]+:.*?## .*$$' $(MAKEFILE_LIST) \
@@ -143,7 +145,11 @@ courses:                 ## Fait tourner des courses : make courses CIRCUIT=Spa 
 		--graine $(GRAINE) --circuit $(CIRCUIT)
 
 board:                   ## Démarre TensorBoard sur http://localhost:6006
-	$(DC) up -d tensorboard
+	@$(DC) up -d tensorboard
+	@echo "  TensorBoard : http://localhost:6006 (les nouveaux runs apparaissent seuls, ~30 s)"
+
+runs:                    ## Tableau des runs et de leur bilan : make runs [DRIVER=driver2]
+	@$(PY3) training/lister.py $(if $(filter command line,$(origin DRIVER)),--pilote $(DRIVER))
 
 board-stop:              ## Arrête TensorBoard
 	$(DC) stop tensorboard
