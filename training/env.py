@@ -17,17 +17,57 @@ import gymnasium as gym
 import numpy as np
 
 import env_simulation as sim
+from f110_gym.envs import laser_models
 from training import features
 from training.metrics import ACTIF, ARRIVE, DNF
 
-COUT_TEMPS = 0.01        # par pas : la lenteur coûte
+
+def _get_dt_memorise(get_dt):
+    """`sim.reset()` reconstruit le simulateur et recalcule à chaque fois la carte
+    des distances aux murs : 0,19 s sur 0,23 s de reset, 80 % du temps
+    d'entraînement au début, quand les épisodes durent quelques dizaines de pas.
+    Elle ne dépend que du circuit chargé : on garde la dernière, ce qui suffit
+    puisqu'un environnement reste plusieurs épisodes sur le même circuit. Le
+    résultat est identique, on ne touche à aucun fichier d'Epitech."""
+    derniere = {}
+
+    def get_dt_memorise(bitmap, resolution):
+        cle = (sim.get_current_map(), bitmap.shape, resolution)
+        if derniere.get("cle") != cle:
+            derniere.update(cle=cle, dt=get_dt(bitmap, resolution))
+        return derniere["dt"]
+
+    return get_dt_memorise
+
+
+laser_models.get_dt = _get_dt_memorise(laser_models.get_dt)
+
+COUT_TEMPS = 0.01       # par pas : la lenteur coûte
 POIDS_DOUCEUR = 0.05     # × variation de braquage, secondaire devant la progression
 PENALITE_CHOC = 2.0
 PENALITE_DNF = 10.0
 
+# Séparation des circuits, figée une fois pour toutes (protocole d'entraînement) :
+# la généralisation se mesure sur VALIDATION, et on ne règle jamais rien sur TEST.
+# Validation et test couvrent un court (Oschersleben, 261 m), un long (Spa, 554 m)
+# et des largeurs de 2,0 à 2,6 m. Montreal, le plus étroit (1,39 m), reste à
+# l'entraînement : sans lui, rien n'apprend les pistes à moins de 2 m.
+# `example` est réservé au débogage.
+VALIDATION = ("Oschersleben", "Zandvoort", "MexicoCity")
+TEST = ("Spa", "Budapest", "Sochi")
+# Changer de circuit reconstruit le simulateur (~0,4 s). Au début, un épisode
+# dure 2 à 3 s de simulation : changer à chaque épisode divisait la vitesse
+# d'entraînement par 6. Chaque environnement garde donc son circuit plusieurs
+# épisodes ; la variété vient des 8 environnements en parallèle.
+EPISODES_PAR_CIRCUIT = 20
+
+ENTRAINEMENT = tuple(sorted(set(sim.get_available_maps()) - set(VALIDATION) - set(TEST) - {"example"}))
+
 
 class CourseSolo(gym.Env):
-    """Une voiture, un circuit tiré au hasard à chaque `reset()` parmi `circuits`."""
+    """Une voiture, un circuit tiré au hasard parmi `circuits` tous les
+    `EPISODES_PAR_CIRCUIT` épisodes,
+    sauf si `reset(options={"circuit": ...})` l'impose (évaluation)."""
 
     _instances = 0
 
@@ -39,16 +79,25 @@ class CourseSolo(gym.Env):
 
         self.circuits = list(circuits)
         self.pas_max = pas_max
-        # Terminer sur un choc accélère l'apprentissage au début, mais l'agent
-        # n'apprend jamais à se dégager d'un mur : à couper plus tard.
+        # Terminer sur un choc rend le mur très coûteux : la politique apprend à
+        # ne jamais le toucher. Sans ça (essayé sur 1M de pas, 17 circuits), un
+        # choc ne coûte que -2 : elle fonce à 8 m/s, finit collée à un mur sans
+        # marche arrière pour s'en dégager, et se fait éliminer pour stagnation.
+        # Prix : plus de reset(), 376 pas/s au lieu de 758 sur 8 environnements.
         self.fin_sur_choc = fin_sur_choc
+        self._episodes = 0
 
         self.observation_space = gym.spaces.Box(-1.5, 1.5, (features.TAILLE_OBSERVATION,), np.float32)
         self.action_space = gym.spaces.Box(-1.0, 1.0, (2,), np.float32)
 
     def reset(self, *, seed: int | None = None, options: dict | None = None):
         super().reset(seed=seed)
-        circuit = self.circuits[self.np_random.integers(len(self.circuits))]
+        circuit = (options or {}).get("circuit")
+        if circuit is None:
+            if self._episodes % EPISODES_PAR_CIRCUIT == 0:
+                self._circuit = self.circuits[self.np_random.integers(len(self.circuits))]
+            self._episodes += 1
+            circuit = self._circuit
         if circuit != (sim.get_current_map() or "example"):
             sim.set_map(circuit)   # reconstruit le simulateur : seulement si le circuit change
         sim.reset(num_cars=1, seed=int(self.np_random.integers(2**31)))
