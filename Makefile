@@ -45,7 +45,7 @@ GRAINE   ?= 42
 EPISODES ?= 5
 CIRCUIT  ?= example
 PAS      ?= 200000
-CIRCUITS ?= example
+CIRCUITS ?=
 
 .DEFAULT_GOAL := help
 .PHONY: help sim-check sim-hash sim-manifest courses runs garder export build check test venv record replay video train board board-stop verify verify-gp clean
@@ -137,10 +137,10 @@ video:                   ## Exporte la course en MP4 -> recordings/<NAME>.mp4
 		--record /app/recordings/$(NAME).mp4 --no-telemetry
 
 # --- entraîner -------------------------------------------------------------
-train:                   ## Entraîne un pilote : make train DRIVER=driver2 PAS=200000 CIRCUITS=example,Spa
+train:                   ## Entraîne un pilote : make train DRIVER=driver2 PAS=1000000 [CIRCUITS=example]
 	@test -f training/train.py || { \
 	  echo "  training/train.py introuvable."; exit 1; }
-	$(DC_RUN) sim python -m training.train --pilote $(DRIVER) --pas $(PAS) --circuits $(CIRCUITS)
+	$(DC_RUN) sim python -m training.train --pilote $(DRIVER) --pas $(PAS) $(if $(CIRCUITS),--circuits $(CIRCUITS))
 
 export:                  ## Exporte un run vers submission/<DRIVER> : make export RUN=<nom> DRIVER=driver4
 	@test -n "$(RUN)" || { echo "  Préciser le run : make export RUN=<nom> DRIVER=driver4  (liste : make runs)"; exit 1; }

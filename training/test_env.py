@@ -41,8 +41,8 @@ def test_episodes():
 
     rng = np.random.default_rng(0)
     fins = set()
-    for graine in range(4):
-        obs, info = env.reset(seed=graine)
+    for graine, circuit in enumerate(["example", "Montreal", "Montreal", "example"]):
+        obs, info = env.reset(seed=graine, options={"circuit": circuit})
         fins.add(info["circuit"])
         termine = tronque = False
         while not (termine or tronque):

@@ -1,6 +1,7 @@
 """Entraîne un pilote avec PPO sur `CourseSolo`, puis l'évalue en course.
 
-    make train DRIVER=driver1 PAS=200000 CIRCUITS=example
+    make train DRIVER=driver1 PAS=1000000
+    make train DRIVER=driver1 PAS=200000 CIRCUITS=example     # débogage
 
 Un run complet : `meta.json` (graine, commit, configuration), les courbes PPO
 dans TensorBoard, `model.zip` (Stable-Baselines3), puis une évaluation sur le
@@ -29,17 +30,18 @@ from stable_baselines3.common.logger import configure
 from stable_baselines3.common.vec_env import SubprocVecEnv
 
 import env_simulation as sim
-from training.env import CourseSolo
+from training.env import ENTRAINEMENT, VALIDATION, CourseSolo
 from training.metrics import SuiviCourse, agreger
 from training.runs import Run
 
 
 def evaluer(model: PPO, circuits: list[str], episodes: int, graine: int) -> list[dict]:
-    """Courses complètes, politique déterministe, sans fin sur choc : la vraie règle du tournoi."""
+    """Courses complètes sur chaque circuit, politique déterministe, sans fin sur
+    choc : la vraie règle du tournoi. Mêmes graines pour toutes les politiques."""
     env = CourseSolo(circuits=circuits, fin_sur_choc=False, pas_max=6000)
     resultats = []
-    for n in range(episodes):
-        obs, info = env.reset(seed=graine + n)
+    for circuit, n in [(c, n) for c in circuits for n in range(episodes)]:
+        obs, info = env.reset(seed=graine + n, options={"circuit": circuit})
         suivi = SuiviCourse(nb_voitures=1)
         fini = False
         while not fini:
@@ -51,7 +53,7 @@ def evaluer(model: PPO, circuits: list[str], episodes: int, graine: int) -> list
 
         voiture = resultats[-1][0]
         etat = "arrivée" if voiture.a_termine else (voiture.cause_abandon or "temps écoulé")
-        print(f"  éval {n + 1}/{episodes} ({info['circuit']}) : {etat}, {voiture.tours} tour(s), "
+        print(f"  éval {info['circuit']} {n + 1}/{episodes} : {etat}, {voiture.tours} tour(s), "
               f"progression max {voiture.progression_max:.3f}, {voiture.chocs_mur} choc(s)")
     return resultats
 
@@ -61,17 +63,20 @@ def main() -> None:
     parser.add_argument("--pilote", default="driver1")
     parser.add_argument("--pas", type=int, default=200_000, help="pas d'entraînement au total")
     parser.add_argument("--envs", type=int, default=4, help="environnements en parallèle")
-    parser.add_argument("--circuits", default="example", help="séparés par des virgules")
+    parser.add_argument("--circuits", default="", help="séparés par des virgules (défaut : ENTRAINEMENT)")
     parser.add_argument("--graine", type=int, default=42)
-    parser.add_argument("--eval-episodes", type=int, default=3)
+    parser.add_argument("--eval-episodes", type=int, default=2, help="par circuit d'évaluation")
     args = parser.parse_args()
-    circuits = args.circuits.split(",")
+    circuits = args.circuits.split(",") if args.circuits else list(ENTRAINEMENT)
+    # On évalue sur des circuits jamais vus, sauf en débogage sur un circuit choisi à la main.
+    circuits_eval = list(VALIDATION) if not args.circuits else circuits
 
     # Hyperparamètres par défaut de SB3, sauf n_steps : 512 × 4 envs = 2 048
     # pas par mise à jour, comme le défaut à un seul env. À régler dans CRA-72.
     config = {
         "graine": args.graine,
         "circuits": circuits,
+        "circuits_eval": circuits_eval,
         "pas": args.pas,
         "envs": args.envs,
         "ppo": {"n_steps": 512, "batch_size": 64, "gamma": 0.99, "learning_rate": 3e-4},
@@ -93,8 +98,8 @@ def main() -> None:
         envs.close()
         model.save(run.dossier / "model.zip")
 
-        print(f"\n  évaluation sur {args.eval_episodes} course(s) :")
-        episodes = evaluer(model, circuits, args.eval_episodes, args.graine + 10_000)
+        print(f"\n  évaluation, {args.eval_episodes} course(s) par circuit :")
+        episodes = evaluer(model, circuits_eval, args.eval_episodes, args.graine + 10_000)
         bilan = agreger(episodes)
         run.enregistrer_bilan(bilan)
         for cle, valeur in sorted(bilan.items()):
