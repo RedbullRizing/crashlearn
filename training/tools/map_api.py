@@ -13,6 +13,12 @@ par agent — voir la fonction run_map() plus bas, qui EST la vérification de C
 Usage (depuis la racine du dépôt, dans le conteneur) :
     docker compose run --rm sim python training/tools/map_api.py
     docker compose run --rm sim python training/tools/map_api.py --steps 2000 --maps example,Monza,Montreal
+
+Par défaut les pilotes de test sont commandés entre 2 et 6 m/s : les bornes de vitesse
+mesurées sont alors celles de ces pilotes, pas du simulateur. Pour mesurer le vrai
+plafond, imposer la même vitesse à toutes les voitures :
+    ... map_api.py --speed 10     # plafond annoncé par le simulateur
+    ... map_api.py --speed 20     # au-delà : vérifie que l'écrêtage à 10 m/s tient
 """
 
 import argparse
@@ -77,7 +83,8 @@ class Bounds:
     def __repr__(self):
         if self.n == 0:
             return "(jamais observé)"
-        return f"[{self.lo:.4f}, {self.hi:.4f}]  (n={self.n})"
+        # 5 décimales : à 4, un progress de 0,99996 s'affiche 1.0000 alors que le moteur le garde dans [0, 1[.
+        return f"[{self.lo:.5f}, {self.hi:.5f}]  (n={self.n})"
 
 
 def _pure_pursuit_steer(x, y, yaw, waypoints, arc, total_arc, lookahead=1.0):
@@ -133,18 +140,23 @@ def _policy(car_id, step_i, obs, sim_obj):
     return 2.0, 0.08 * math.sin(step_i * 0.12)
 
 
-def run_map(map_name, steps, num_cars, seed, report):
+def run_map(map_name, steps, num_cars, seed, report, speed_override=None):
     set_map(map_name)
     reset(num_cars=num_cars, seed=seed)
     sim_obj = _get_sim()
 
     obs_list = [get_obs(i) for i in range(num_cars)]
+    last_info = None  # statut au pas précédent : sert à ne noter que les ordres d'une voiture active
 
     for step_i in range(steps):
         # --- Ordre imposé, vérifié explicitement (c'est le "script court" de CRA-6) ---
         # 1) apply_action() pour CHAQUE agent, avant tout pas de simulation.
         for cid in range(num_cars):
             speed, steer = _policy(cid, step_i, obs_list[cid], sim_obj)
+            if speed_override is not None:
+                speed = speed_override
+            if last_info is None or last_info["agent_status"][cid] == 1:
+                report.see_command(speed)
             apply_action(cid, speed, steer)
         # 2) UN SEUL simulation_step().
         simulation_step()
@@ -158,7 +170,11 @@ def run_map(map_name, steps, num_cars, seed, report):
         # 4) get_obs() par agent, après le pas — jamais avant apply_action().
         obs_list = [get_obs(i) for i in range(num_cars)]
 
+        for cid in range(num_cars):
+            prev = 1 if last_info is None else last_info["agent_status"][cid]
+            report.see_transition(map_name, cid, prev, info["agent_status"][cid], info, obs_list[cid])
         report.see_step(map_name, obs_list, info, num_cars, step_i)
+        last_info = info
 
         if info["race_over"]:
             break
@@ -172,6 +188,9 @@ class Report:
             k: Bounds() for k in ("velocity", "steering", "progress", "lap_count", "rank")
         }
         self.lidar = Bounds()
+        # Vitesses ordonnées à une voiture active, avant et après l'écrêtage de apply_action().
+        self.cmd_raw = Bounds()
+        self.cmd_clipped = Bounds()
         self.opp_scalar = {
             k: Bounds() for k in ("x_rel", "y_rel", "yaw_rel", "speed", "progress", "lap_count")
         }
@@ -193,8 +212,41 @@ class Report:
         self.opponent_keys = set()
         self.anomalies = []  # diagnostics quand un opponent "actif" a une position aberrante
 
+        # Ce que la boucle ne montrait pas : valeurs de ranks, motifs de opponents_mask,
+        # cause de chaque abandon et état au moment de l'arrivée (lap_count y vaut 3).
+        self.ranks_seen = set()
+        self.mask_patterns = set()
+        self.causes = {}            # "stagnation" / "sortie de piste" / "arrivée" -> nombre
+        self.finishes = []          # un instantané par voiture arrivée
+
+    def see_command(self, speed):
+        self.cmd_raw.see(speed)
+        self.cmd_clipped.see(min(max(speed, sim_mod._TARGET_SPEED_MIN), sim_mod._TARGET_SPEED_MAX))
+
+    def see_transition(self, map_name, cid, prev, now, info, obs):
+        """Enregistre la cause d'un changement de statut, au pas où il se produit."""
+        if prev == 1 and now == 0:
+            # `stagnation` vaut True au seul pas de l'élimination pour stagnation ;
+            # il reste False pour une sortie de piste (le test géométrique n'y touche pas).
+            cause = "stagnation" if info["stagnation"][cid] else "sortie de piste"
+        elif prev == 1 and now == 2:
+            cause = "arrivée"
+            # progress / lap_count / rank viennent des compteurs du moteur, pas de la pose :
+            # ils restent fiables même sur la voiture qui vient de franchir la ligne.
+            self.finishes.append({
+                "map": map_name, "car": cid, "lap_count": obs["lap_count"],
+                "progress": round(obs["progress"], 4), "rank": obs["rank"],
+                "lap_times": [round(t, 2) for t in info["lap_times"][cid]],
+                "max_progress": round(info["max_progress"][cid], 4),
+            })
+        else:
+            return
+        self.causes[cause] = self.causes.get(cause, 0) + 1
+
     def see_step(self, map_name, obs_list, info, num_cars, step_i=None):
         self.info_keys |= set(info.keys())
+        self.ranks_seen |= {(slot < num_cars, r) for slot, r in info["ranks"].items()}
+        self.mask_patterns.add(tuple(bool(b) for b in info["opponents_mask"]))
         for cid in range(num_cars):
             obs = obs_list[cid]
             self.obs_keys |= set(obs.keys())
@@ -251,6 +303,14 @@ class Report:
         for k, b in self.obs_scalar.items():
             print(f"  obs[{k!r}]".ljust(20), b)
         print(f"  obs['lidar'] min/max".ljust(20), self.lidar)
+        print("  Vitesse ordonnée à une voiture active — à lire AVEC obs['velocity'] :")
+        print(f"    avant écrêtage   {self.cmd_raw}")
+        print(f"    après écrêtage   {self.cmd_clipped}  (plage acceptée : [{sim_mod._TARGET_SPEED_MIN}, {sim_mod._TARGET_SPEED_MAX}])")
+        if self.obs_scalar['velocity'].n and self.cmd_clipped.n:
+            gap = self.obs_scalar['velocity'].hi - self.cmd_clipped.hi
+            print(f"    vitesse observée max − consigne écrêtée max = {gap:+.3f} m/s"
+                  "  (≈ 0 : la borne haute observée n'est que celle de la consigne ;"
+                  " > 0 : le simulateur dépasse sa consigne)")
         print(f"  clés obs observées : {sorted(self.obs_keys)}")
 
         print("\n  opponents (status == 1 uniquement) :")
@@ -272,6 +332,16 @@ class Report:
         print(f"  stagnation observée au moins une fois       : {self.stagnation_seen}")
         print(f"  race_over observé à True / False            : {self.race_over_seen}")
         print(f"  clés info observées : {sorted(self.info_keys)}")
+        print(f"  cause des changements de statut : {self.causes or 'aucun'}")
+        actifs = sorted(r for en_piste, r in self.ranks_seen if en_piste)
+        absents = sorted(r for en_piste, r in self.ranks_seen if not en_piste)
+        print(f"  info['ranks'] : valeurs pour les voitures en piste {sorted(set(actifs))} ; emplacements absents {sorted(set(absents))}")
+        print(f"  info['opponents_mask'] : motifs observés {sorted(self.mask_patterns)}")
+        if self.finishes:
+            print(f"  voitures arrivées : {len(self.finishes)} — lap_count à l'arrivée : {sorted({f['lap_count'] for f in self.finishes})}")
+            for f in self.finishes[:30]:
+                print(f"    {f['map']:<14} voiture {f['car']}  lap_count={f['lap_count']} progress={f['progress']} "
+                      f"rank={f['rank']} max_progress={f['max_progress']}  lap_times={f['lap_times']}")
 
         print("\n" + "=" * 72)
         print("ÉCARTS avec get_space_info()")
@@ -295,7 +365,7 @@ class Report:
             print("  progress, ET les x_rel/y_rel qu'il calcule pour SES adversaires, perdent")
             print("  tout sens (mesurés depuis 10000 m de la piste), même si ces adversaires")
             print("  sont eux bien actifs et rapportent un status correct. Conséquence pour")
-            print("  le wrapper (CRA-14) : arrêter d'appeler get_obs() pour un agent_id dès")
+            print("  le wrapper (env.py) : arrêter d'appeler get_obs() pour un agent_id dès")
             print("  que son agent_status quitte 1, comme font demo.py / sim_recorder.py.")
             for a in self.anomalies:
                 print(f"  ex: map={a['map']} step={a['step']} observer={a['observer']}"
@@ -307,6 +377,13 @@ class Report:
         for name in _CONSTANT_NAMES:
             print(f"  {name:<24} = {getattr(sim_mod, name)}")
 
+        print("\n" + "=" * 72)
+        print("DYNAMIQUE DU VÉHICULE (_PARAMS)")
+        print("=" * 72)
+        for k, v in _PARAMS.items():
+            print(f"  {k:<10} = {v}")
+        print(f"  empattement (lf + lr) = {_PARAMS['lf'] + _PARAMS['lr']:.4f} m")
+
 
 def main():
     parser = argparse.ArgumentParser(description="CRA-6 — relevé de l'API du simulateur")
@@ -315,6 +392,9 @@ def main():
     parser.add_argument("--maps", type=str, default=",".join(DEFAULT_MAPS),
                          help=f"Circuits séparés par des virgules (défaut: {','.join(DEFAULT_MAPS)})")
     parser.add_argument("--seed", type=int, default=42, help="Graine LiDAR (défaut: 42, pour reproductibilité)")
+    parser.add_argument("--speed", type=float, default=None,
+                         help="Impose cette vitesse commandée (m/s) à toutes les voitures, pour mesurer "
+                              "le vrai plafond du simulateur. Défaut : chaque pilote de test garde la sienne (2 à 6 m/s)")
     args = parser.parse_args()
 
     num_cars = max(1, min(args.num_cars, 4))
@@ -327,8 +407,9 @@ def main():
 
     report = Report()
     for map_name in maps:
-        print(f"--- Circuit : {map_name} ({args.steps} pas, {num_cars} voitures) ---")
-        run_map(map_name, args.steps, num_cars, args.seed, report)
+        speed_txt = f", vitesse imposée {args.speed} m/s" if args.speed is not None else ""
+        print(f"--- Circuit : {map_name} ({args.steps} pas, {num_cars} voitures{speed_txt}) ---")
+        run_map(map_name, args.steps, num_cars, args.seed, report, speed_override=args.speed)
 
     report.print_all()
 
