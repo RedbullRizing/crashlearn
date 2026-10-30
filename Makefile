@@ -48,7 +48,7 @@ PAS      ?= 200000
 CIRCUITS ?= example
 
 .DEFAULT_GOAL := help
-.PHONY: help sim-check sim-hash sim-manifest courses runs garder build check test venv record replay video train board board-stop verify verify-gp clean
+.PHONY: help sim-check sim-hash sim-manifest courses runs garder export build check test venv record replay video train board board-stop verify verify-gp clean
 
 help:                    ## Affiche cette aide
 	@grep -E '^[a-z-]+:.*?## .*$$' $(MAKEFILE_LIST) \
@@ -141,6 +141,10 @@ train:                   ## Entraîne un pilote : make train DRIVER=driver2 PAS=
 	@test -f training/train.py || { \
 	  echo "  training/train.py introuvable."; exit 1; }
 	$(DC_RUN) sim python -m training.train --pilote $(DRIVER) --pas $(PAS) --circuits $(CIRCUITS)
+
+export:                  ## Exporte un run vers submission/<DRIVER> : make export RUN=<nom> DRIVER=driver4
+	@test -n "$(RUN)" || { echo "  Préciser le run : make export RUN=<nom> DRIVER=driver4  (liste : make runs)"; exit 1; }
+	$(DC_RUN) sim python -m training.exporter --run $(RUN) --pilote $(DRIVER) --circuit $(CIRCUIT)
 
 courses:                 ## Fait tourner des courses : make courses CIRCUIT=Spa GRAINE=7
 	$(DC_RUN) sim python -m training.courses \
