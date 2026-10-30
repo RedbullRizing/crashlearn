@@ -10,15 +10,9 @@
 ifeq ($(OS),Windows_NT)                 # Git Bash
   PY  := .venv/Scripts/python.exe
   PY3 := python
-  MPL := TkAgg
 else
   PY  := .venv/bin/python
   PY3 := python3
-  ifeq ($(shell uname -s),Darwin)
-    MPL := MacOSX
-  else
-    MPL := TkAgg
-  endif
 endif
 
 GIT_SHA   := $(shell git rev-parse --short HEAD 2>/dev/null || echo inconnu)
@@ -111,6 +105,12 @@ venv:                    ## Installe l'environnement local pour l'affichage
 	python3 -m venv .venv
 	$(PY) -m pip install --quiet --upgrade pip
 	$(PY) -m pip install --quiet numpy pillow pyyaml matplotlib
+	@$(PY) -c "import tkinter" 2>/dev/null || { \
+	  echo "  Tk manque à ce Python : make replay ne pourra pas ouvrir de fenêtre."; \
+	  echo "    macOS (Homebrew) : brew install python-tk@$$($(PY) -c 'import sys; print(f"{sys.version_info[0]}.{sys.version_info[1]}")')"; \
+	  echo "    Linux / WSL      : sudo apt install python3-tk"; \
+	  echo "    Windows          : l'installeur de python.org inclut Tk (case tcl/tk cochée)"; \
+	  echo "  puis relancer make venv."; }
 
 # --- voir une course -------------------------------------------------------
 # Avec CTRL=submission, on pointe explicitement sur submission/$(DRIVER) : sans
@@ -127,8 +127,11 @@ record:                  ## Enregistre une course -> recordings/<NAME>.npz
 		--map $(CIRCUIT) --seed $(GRAINE) $(RECORD_SUB) \
 		--out /app/recordings/$(NAME).npz
 
+# viz_replay.py n'ouvre de fenêtre que si DISPLAY existe (habitude Linux/X11), et
+# dessine toujours avec Tk. macOS et Windows n'ont pas DISPLAY et Tk ne le lit pas :
+# une valeur quelconque suffit à éviter le mode sans écran.
 replay:                  ## Ouvre la course dans une fenêtre (nécessite make venv)
-	cd simulation && MPLBACKEND=$(MPL) ../$(PY) viz_replay.py \
+	cd simulation && DISPLAY=$${DISPLAY:-:0} ../$(PY) viz_replay.py \
 		--npz ../recordings/$(NAME).npz --follow
 
 video:                   ## Exporte la course en MP4 -> recordings/<NAME>.mp4
