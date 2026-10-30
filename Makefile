@@ -105,9 +105,12 @@ venv:                    ## Installe l'environnement local pour l'affichage
 	python3 -m venv .venv
 	$(PY) -m pip install --quiet --upgrade pip
 	$(PY) -m pip install --quiet numpy pillow pyyaml matplotlib
-	@$(PY) -c "import tkinter" 2>/dev/null || \
-	  echo "  Tk manque à ce Python, make replay ne pourra pas ouvrir de fenêtre." \
-	       "macOS/Homebrew : brew install python-tk@$$($(PY) -c 'import sys; print(f"{sys.version_info[0]}.{sys.version_info[1]}")')"
+	@$(PY) -c "import tkinter" 2>/dev/null || { \
+	  echo "  Tk manque à ce Python : make replay ne pourra pas ouvrir de fenêtre."; \
+	  echo "    macOS (Homebrew) : brew install python-tk@$$($(PY) -c 'import sys; print(f"{sys.version_info[0]}.{sys.version_info[1]}")')"; \
+	  echo "    Linux / WSL      : sudo apt install python3-tk"; \
+	  echo "    Windows          : l'installeur de python.org inclut Tk (case tcl/tk cochée)"; \
+	  echo "  puis relancer make venv."; }
 
 # --- voir une course -------------------------------------------------------
 # Avec CTRL=submission, on pointe explicitement sur submission/$(DRIVER) : sans

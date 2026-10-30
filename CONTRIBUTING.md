@@ -37,7 +37,7 @@ make record NAME=essai CTRL=pure_pursuit                 # circuit example
 make record NAME=spa   CTRL=pure_pursuit CIRCUIT=Spa GRAINE=7
 make record NAME=d2    CTRL=submission DRIVER=driver2    # un pilote précis
 make venv           # une fois, installe de quoi afficher
-make replay NAME=essai     # fenêtre interactive (macOS : brew install python-tk@3.x avant make venv)
+make replay NAME=essai     # fenêtre interactive (Tk requis : make venv indique quoi installer)
 make video  NAME=essai     # ou export MP4
 ```
 
