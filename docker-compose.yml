@@ -8,11 +8,20 @@
 # Conséquence : `simulation/` n'est pas versionné. Chaque membre télécharge l'archive
 # d'Epitech et la décompresse ici — voir CONTRIBUTING.md.
 
+# Notre image = celle d'Epitech + la pile d'entraînement. Versions exactes : une
+# dépendance flottante finit par tirer un numpy ou un torch différent, et c'est
+# toute la chaîne ONNX épinglée en dessous qui saute. pip ne touche à rien d'autre.
 x-service: &service
   build:
-    context: ./simulation
-    target: base
-  image: crashlearn-sim:base
+    context: .
+    additional_contexts:
+      base: service:base
+    dockerfile_inline: |
+      FROM base
+      RUN pip install --no-cache-dir \
+          "gymnasium==1.4.0" \
+          "stable-baselines3==2.9.2"
+  image: crashlearn-sim:train
   working_dir: /app
   environment:
     MPLBACKEND: Agg
@@ -24,6 +33,13 @@ x-service: &service
     - ./recordings:/app/recordings
 
 services:
+
+  # L'image d'Epitech telle quelle, construite seulement pour servir de base.
+  base:
+    build:
+      context: ./simulation
+      target: base
+    image: crashlearn-sim:base
 
   sim:
     <<: *service

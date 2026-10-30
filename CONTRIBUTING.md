@@ -18,6 +18,8 @@ Si l'empreinte diffère, tu n'as pas la même version et vos résultats ne seron
 
 Tout passe par le conteneur : il épingle la chaîne ONNX (`onnx 1.22`, `onnxruntime 1.29`, `torch 2.13+cpu`) avec laquelle le tournoi chargera nos modèles, et le couple `numpy 2.4.6` / `numba 0.65.1` sans lequel la simulation ne démarre pas. Un modèle exporté hors de cette image risque le *Unsupported model IR version* le jour J.
 
+Notre image (`crashlearn-sim:train`) ajoute à celle d'Epitech la pile d'entraînement, `gymnasium 1.4.0` et `stable-baselines3 2.9.2`, sans toucher aux versions ci-dessus. Pour en ajouter une : une ligne épinglée dans `docker-compose.yml`, puis `make build`.
+
 Les commandes passent par le `Makefile` à la racine. `make` seul liste tout.
 
 ```bash
