@@ -86,15 +86,18 @@ build: sim-check         ## Construit l'image Docker (~10 min la première fois)
 check: sim-check         ## Vérifie que le simulateur tourne
 	$(DC) run --rm sim
 
-test: sim-check          ## Lance les tests fournis par Epitech
+test: sim-check          ## Lance les tests d'Epitech et ceux de training/
 	@docker compose run --rm sim python test_contract.py; a=$$?; \
 	 docker compose run --rm sim python test_integration.py; b=$$?; \
+	 docker compose run --rm sim python -m training.test_env; c=$$?; \
 	 echo ""; echo "=================================================="; \
 	 if [ $$a -eq 0 ]; then echo "  test_contract     OK"; \
 	                   else echo "  test_contract     ECHEC"; fi; \
 	 if [ $$b -eq 0 ]; then echo "  test_integration  OK"; \
 	                   else echo "  test_integration  ECHEC"; fi; \
-	 if [ $$a -ne 0 ] || [ $$b -ne 0 ]; then \
+	 if [ $$c -eq 0 ]; then echo "  test_env          OK"; \
+	                   else echo "  test_env          ECHEC"; fi; \
+	 if [ $$a -ne 0 ] || [ $$b -ne 0 ] || [ $$c -ne 0 ]; then \
 	   echo ""; \
 	   echo "  T08 (friction) echoue par conception : env_simulation.py fige"; \
 	   echo "  l'adherence et porte un TODO. La meteo viendra de notre env.py."; \
