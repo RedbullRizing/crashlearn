@@ -25,4 +25,4 @@ Une branche par issue, avec le [nom généré par Linear](https://linear.app/doc
 
 Le simulateur d'Epitech n'est pas versionné : télécharge l'archive et décompresse-la en `simulation/`, puis `make sim-hash` pour vérifier que tu as la même version que l'équipe. Toutes les commandes passent par le `Makefile` — voir [`CONTRIBUTING.md`](CONTRIBUTING.md).
 
-Le suivi des runs et le banc d'évaluation existent (`training/runs.py`, `metrics.py`, `courses.py`) ; l'environnement et l'entraînement (`env.py`, `train.py`) restent à écrire. Le cadrage est maintenu dans Linear ; ce dépôt accueille `training/` et le dossier `submission/` livré au tournoi.
+Le suivi des runs, le banc d'évaluation (`training/runs.py`, `metrics.py`, `courses.py`) et l'environnement Gymnasium (`env.py`, `features.py`) existent ; l'entraînement (`train.py`) reste à écrire. Le cadrage est maintenu dans Linear ; ce dépôt accueille `training/` et le dossier `submission/` livré au tournoi.
