@@ -1,0 +1,79 @@
+{
+  "nom": "driver4-20261030-124516-ppo",
+  "pilote": "driver4",
+  "algo": "ppo",
+  "graine": 42,
+  "circuits": [
+    "Austin",
+    "BrandsHatch",
+    "Catalunya",
+    "Hockenheim",
+    "IMS",
+    "Melbourne",
+    "Montreal",
+    "Monza",
+    "MoscowRaceway",
+    "Nuerburgring",
+    "Sakhir",
+    "SaoPaulo",
+    "Sepang",
+    "Shanghai",
+    "Silverstone",
+    "Spielberg",
+    "YasMarina"
+  ],
+  "date": "2026-10-30T12:45:17",
+  "git": {
+    "commit": "09880ec",
+    "modifie": false
+  },
+  "versions": {
+    "python": "3.11.18",
+    "numpy": "2.4.6",
+    "torch": "2.13.0+cpu",
+    "gymnasium": "1.4.0",
+    "stable_baselines3": "2.9.2",
+    "onnx": "1.22.0",
+    "onnxruntime": "1.29.0"
+  },
+  "commande": "/app/training/train.py --pilote driver4 --pas 1000000 --envs 8",
+  "config": {
+    "graine": 42,
+    "circuits": [
+      "Austin",
+      "BrandsHatch",
+      "Catalunya",
+      "Hockenheim",
+      "IMS",
+      "Melbourne",
+      "Montreal",
+      "Monza",
+      "MoscowRaceway",
+      "Nuerburgring",
+      "Sakhir",
+      "SaoPaulo",
+      "Sepang",
+      "Shanghai",
+      "Silverstone",
+      "Spielberg",
+      "YasMarina"
+    ],
+    "circuits_eval": [
+      "Oschersleben",
+      "Zandvoort",
+      "MexicoCity"
+    ],
+    "pas": 1000000,
+    "envs": 8,
+    "ppo": {
+      "n_steps": 512,
+      "batch_size": 64,
+      "gamma": 0.99,
+      "learning_rate": 0.0003
+    },
+    "env": {
+      "pas_max": 3000,
+      "fin_sur_choc": true
+    }
+  }
+}
