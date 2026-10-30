@@ -1,0 +1,42 @@
+{
+  "nom": "driver4-20261030-093034-ppo",
+  "pilote": "driver4",
+  "algo": "ppo",
+  "graine": 42,
+  "circuits": [
+    "example"
+  ],
+  "date": "2026-10-30T09:30:35",
+  "git": {
+    "commit": "8e4fcb1",
+    "modifie": false
+  },
+  "versions": {
+    "python": "3.11.18",
+    "numpy": "2.4.6",
+    "torch": "2.13.0+cpu",
+    "gymnasium": "1.4.0",
+    "stable_baselines3": "2.9.2",
+    "onnx": "1.22.0",
+    "onnxruntime": "1.29.0"
+  },
+  "commande": "/app/training/train.py --pilote driver4 --pas 300000 --envs 8 --circuits example --eval-episodes 3",
+  "config": {
+    "graine": 42,
+    "circuits": [
+      "example"
+    ],
+    "pas": 300000,
+    "envs": 8,
+    "ppo": {
+      "n_steps": 512,
+      "batch_size": 64,
+      "gamma": 0.99,
+      "learning_rate": 0.0003
+    },
+    "env": {
+      "pas_max": 3000,
+      "fin_sur_choc": true
+    }
+  }
+}

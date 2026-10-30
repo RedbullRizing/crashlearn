@@ -44,6 +44,8 @@ DRIVER   ?= driver1
 GRAINE   ?= 42
 EPISODES ?= 5
 CIRCUIT  ?= example
+PAS      ?= 200000
+CIRCUITS ?= example
 
 .DEFAULT_GOAL := help
 .PHONY: help sim-check sim-hash sim-manifest courses runs garder build check test venv record replay video train board board-stop verify verify-gp clean
@@ -135,12 +137,10 @@ video:                   ## Exporte la course en MP4 -> recordings/<NAME>.mp4
 		--record /app/recordings/$(NAME).mp4 --no-telemetry
 
 # --- entraîner -------------------------------------------------------------
-train:                   ## Entraîne un pilote : make train DRIVER=driver2
+train:                   ## Entraîne un pilote : make train DRIVER=driver2 PAS=200000 CIRCUITS=example,Spa
 	@test -f training/train.py || { \
-	  echo "  training/train.py n'existe pas encore (CRA-71)."; \
-	  echo "  En attendant : make courses pour le banc d'évaluation."; \
-	  exit 1; }
-	$(DC_RUN) sim python -m training.train --driver $(DRIVER)
+	  echo "  training/train.py introuvable."; exit 1; }
+	$(DC_RUN) sim python -m training.train --pilote $(DRIVER) --pas $(PAS) --circuits $(CIRCUITS)
 
 courses:                 ## Fait tourner des courses : make courses CIRCUIT=Spa GRAINE=7
 	$(DC_RUN) sim python -m training.courses \
