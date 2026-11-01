@@ -38,7 +38,10 @@ DRIVER   ?= driver1
 GRAINE   ?= 42
 EPISODES ?= 5
 CIRCUIT  ?= example
-PAS      ?= 200000
+# Pour make train, PAS, ENVS et GRAINE ne comptent que s'ils sont donnés : sinon
+# c'est training/configs/$(DRIVER).yaml qui décide (défaut : 200 000 pas, graine 42).
+PAS      ?=
+ENVS     ?=
 CIRCUITS ?=
 
 .DEFAULT_GOAL := help
@@ -140,10 +143,13 @@ video:                   ## Exporte la course en MP4 -> recordings/<NAME>.mp4
 		--record /app/recordings/$(NAME).mp4 --no-telemetry
 
 # --- entraîner -------------------------------------------------------------
-train:                   ## Entraîne un pilote : make train DRIVER=driver2 PAS=1000000 [CIRCUITS=example]
+train:                   ## Entraîne un pilote d'après training/configs/<DRIVER>.yaml : make train DRIVER=driver2 [PAS=1000000 ENVS=8 GRAINE=7 CIRCUITS=example]
 	@test -f training/train.py || { \
 	  echo "  training/train.py introuvable."; exit 1; }
-	$(DC_RUN) sim python -m training.train --pilote $(DRIVER) --pas $(PAS) $(if $(CIRCUITS),--circuits $(CIRCUITS))
+	$(DC_RUN) sim python -m training.train --pilote $(DRIVER) \
+		$(if $(PAS),--pas $(PAS)) $(if $(ENVS),--envs $(ENVS)) \
+		$(if $(filter command line,$(origin GRAINE)),--graine $(GRAINE)) \
+		$(if $(CIRCUITS),--circuits $(CIRCUITS))
 
 export:                  ## Exporte un run vers submission/<DRIVER> : make export RUN=<nom> DRIVER=driver4
 	@test -n "$(RUN)" || { echo "  Préciser le run : make export RUN=<nom> DRIVER=driver4  (liste : make runs)"; exit 1; }

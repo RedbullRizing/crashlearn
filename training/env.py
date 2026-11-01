@@ -47,6 +47,26 @@ POIDS_DOUCEUR = 0.05     # × variation de braquage, secondaire devant la progre
 PENALITE_CHOC = 2.0
 PENALITE_DNF = 10.0
 
+# Valeurs du MDP v1, et clés que `training/configs/<pilote>.yaml` peut surcharger.
+RECOMPENSE_DEFAUT = {
+    "cout_temps": COUT_TEMPS,
+    "poids_douceur": POIDS_DOUCEUR,
+    "penalite_choc": PENALITE_CHOC,
+    "penalite_dnf": PENALITE_DNF,
+}
+
+
+def parametres_recompense(surcharges: dict | None = None) -> dict:
+    """Poids de la récompense : ceux du MDP v1, surchargés clé par clé.
+
+    Une clé inconnue est une faute de frappe dans un fichier de configuration :
+    elle lèverait sinon aucune erreur, et le run partirait avec le poids par défaut."""
+    inconnues = set(surcharges or {}) - set(RECOMPENSE_DEFAUT)
+    if inconnues:
+        raise ValueError(f"poids de récompense inconnus : {sorted(inconnues)} "
+                         f"(attendus : {sorted(RECOMPENSE_DEFAUT)})")
+    return {**RECOMPENSE_DEFAUT, **(surcharges or {})}
+
 # Séparation des circuits, figée une fois pour toutes (protocole d'entraînement) :
 # la généralisation se mesure sur VALIDATION, et on ne règle jamais rien sur TEST.
 # Validation et test couvrent un court (Oschersleben, 261 m), un long (Spa, 554 m)
@@ -72,13 +92,15 @@ class CourseSolo(gym.Env):
     _instances = 0
 
     def __init__(self, circuits: list[str] | tuple[str, ...] = ("example",),
-                 pas_max: int = 3000, fin_sur_choc: bool = True):
+                 pas_max: int = 3000, fin_sur_choc: bool = True,
+                 recompense: dict | None = None):
         CourseSolo._instances += 1
         if CourseSolo._instances > 1:
             raise RuntimeError("un seul CourseSolo par processus : utiliser SubprocVecEnv")
 
         self.circuits = list(circuits)
         self.pas_max = pas_max
+        self.recompense = parametres_recompense(recompense)
         # Terminer sur un choc rend le mur très coûteux : la politique apprend à
         # ne jamais le toucher. Sans ça (essayé sur 1M de pas, 17 circuits), un
         # choc ne coûte que -2 : elle fonce à 8 m/s, finit collée à un mur sans
@@ -119,13 +141,14 @@ class CourseSolo(gym.Env):
         statut = info["agent_status"][0]
         choc = bool(info["collisions"]["wall"][0])
 
+        poids = self.recompense
         recompense = (info["progress_delta"][0] * self._longueur
-                      - COUT_TEMPS
-                      - POIDS_DOUCEUR * abs(action[1] - self._action_precedente[1]))
+                      - poids["cout_temps"]
+                      - poids["poids_douceur"] * abs(action[1] - self._action_precedente[1]))
         if choc:
-            recompense -= PENALITE_CHOC
+            recompense -= poids["penalite_choc"]
         if statut == DNF:
-            recompense -= PENALITE_DNF
+            recompense -= poids["penalite_dnf"]
 
         self._pas += 1
         terminated = statut != ACTIF or (choc and self.fin_sur_choc)
