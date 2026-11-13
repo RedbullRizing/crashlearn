@@ -20,7 +20,6 @@ from pathlib import Path
 RACINE = Path(__file__).resolve().parent.parent
 SOURCES = [("archive", RACINE / "archives"), ("local", RACINE / "runs")]
 
-# (clé du bilan, titre de colonne, format)
 COLONNES = [
     ("course/taux_completion", "complétion", "{:.0%}"),
     ("abandon/stagnation", "stagnation", "{:.0%}"),
@@ -62,7 +61,6 @@ def main() -> None:
             fmt.format(bilan[cle]) if cle in bilan else "—"
             for cle, _, fmt in COLONNES
         ]
-        # Un run sans bilan est en cours, ou a été interrompu.
         etat = "" if bilan else "  (pas de bilan)"
         lignes.append([ou, dossier.name, circuits, str(meta.get("graine", "?")), *valeurs, etat])
 

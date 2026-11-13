@@ -23,10 +23,6 @@ from __future__ import annotations
 import argparse
 import sys
 
-# Le dossier gym/ du simulateur (/app/gym) se fait passer pour le paquet `gym`,
-# sans __version__ : model.save() plante en notant les versions installées.
-# `import gym` lève ainsi ImportError, que SB3 sait ignorer. Le moteur, lui,
-# s'importe sous le nom f110_gym, il n'est pas touché.
 sys.modules["gym"] = None
 
 import torch
@@ -72,13 +68,10 @@ def evaluer(model: PPO, circuits: list[str], episodes: int, graine: int,
 
 
 def main() -> None:
-    # Un réseau de 64×64 n'a rien à gagner de 8 fils : ils se battent avec les
-    # 8 simulateurs pour les cœurs. Mesuré : 484 pas/s à 8 fils, 659 à un seul.
     torch.set_num_threads(1)
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--pilote", default="driver1")
     parser.add_argument("--config", help="fichier YAML (défaut : training/configs/<pilote>.yaml s'il existe)")
-    # Pas de valeur par défaut ici : une option non donnée laisse la main au fichier.
     parser.add_argument("--pas", type=int, help="pas d'entraînement au total")
     parser.add_argument("--envs", type=int, help="environnements en parallèle")
     parser.add_argument("--circuits", default="", help="séparés par des virgules (défaut : ENTRAINEMENT)")
@@ -86,15 +79,11 @@ def main() -> None:
     parser.add_argument("--eval-episodes", type=int, help="par circuit d'évaluation")
     args = parser.parse_args()
     circuits = args.circuits.split(",") if args.circuits else list(ENTRAINEMENT)
-    # On évalue sur des circuits jamais vus, sauf en débogage sur un circuit choisi à la main.
     circuits_eval = list(VALIDATION) if not args.circuits else circuits
 
-    # Hyperparamètres par défaut de SB3, sauf n_steps (voir config.DEFAUTS). À régler dans CRA-72.
     config, fichier = charger(args.pilote, args.config, {
         "graine": args.graine, "pas": args.pas, "envs": args.envs, "eval_episodes": args.eval_episodes,
     })
-    # Poids complets dans meta.json, y compris ceux qu'aucun fichier ne surcharge ;
-    # une clé inconnue s'arrête ici, avant de lancer les processus.
     config["recompense"] = parametres_recompense(config["recompense"])
     config["fichier"] = str(fichier) if fichier else None
     config["circuits"] = circuits
@@ -110,15 +99,11 @@ def main() -> None:
                                         "recompense": config["recompense"]})
 
         if config["depuis"]:
-            # Repartir d'une politique déjà entraînée (champion : du meilleur pilote solo).
             model = PPO.load(RACINE_RUNS / config["depuis"] / "model.zip", env=envs,
                              seed=config["graine"], **config["ppo"])
         else:
             model = PPO("MlpPolicy", envs, seed=config["graine"], verbose=0, **config["ppo"])
-        # Courbes PPO directement dans le dossier du run, à côté de meta.json,
-        # plutôt que dans un sous-dossier PPO_1 créé par SB3.
         model.set_logger(configure(str(run.dossier), ["stdout", "tensorboard"]))
-        # Une sauvegarde tous les 100 000 pas : un entraînement coupé ne perd pas tout.
         sauvegarde = CheckpointCallback(save_freq=max(100_000 // config["envs"], 1),
                                         save_path=str(run.dossier / "sauvegardes"), name_prefix="model")
         model.learn(total_timesteps=config["pas"], callback=sauvegarde)

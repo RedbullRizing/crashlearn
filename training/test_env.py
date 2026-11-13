@@ -13,8 +13,6 @@ from training.env import RECOMPENSE_DEFAUT, Course, parametres_recompense
 
 
 def test_secteurs_gauche_droite():
-    # Mur proche à gauche seulement (rayons > 50) : les secteurs de fin de
-    # vecteur doivent être bas, ceux du début hauts.
     lidar = np.full(100, 15.0, dtype=np.float32)
     lidar[60:77] = 0.5
     obs = {"lidar": lidar, "velocity": 0.0, "steering": 0.0}
@@ -28,8 +26,6 @@ def test_commande_bornee():
 
 
 def test_chargement_comme_agent():
-    # agent.py ne peut pas importer features : il l'exécute depuis son dossier.
-    # Le résultat doit être identique au module importé.
     espace: dict = {}
     with open(os.path.join(os.path.dirname(features.__file__), "features.py")) as f:
         exec(f.read(), espace)
@@ -42,14 +38,12 @@ def test_chargement_comme_agent():
     x = features.observation(obs, info, a)
     assert np.array_equal(espace["observation"](obs, info, a), x)
     assert x.shape == (features.TAILLE_OBSERVATION,) and np.all(np.abs(x) <= 1.5)
-    # le plus proche d'abord, x écrêté à la portée, le troisième absent
     adv = x[-15:].reshape(3, 5)
     assert adv[0, 0] == 1 and np.isclose(adv[0, 1], 0.2) and adv[1, 1] == 1.0 and adv[2, 0] == 0
 
 
 def test_meteo():
-    # Sous la pluie, l'adhérence change dès le premier pas et se lit dans step_info.
-    Course._instances = 0     # le garde-fou vise deux environnements simultanés, pas ceux-ci
+    Course._instances = 0
     env = Course(circuits=("example",), pas_max=50)
     frictions = set()
     for graine in range(6):
@@ -85,7 +79,7 @@ def test_recompense_par_defaut():
                                        "penalite_contact": 1.0, "penalite_dnf": 10.0}
     assert parametres_recompense({"penalite_choc": 5.0}) == {**RECOMPENSE_DEFAUT, "penalite_choc": 5.0}
     try:
-        parametres_recompense({"penalite_chocs": 5.0})      # faute de frappe
+        parametres_recompense({"penalite_chocs": 5.0})
     except ValueError:
         pass
     else:
@@ -93,9 +87,8 @@ def test_recompense_par_defaut():
 
 
 def test_recompense_parametree():
-    # Un poids surchargé change la récompense de son seul montant.
     def recompenses(poids):
-        Course._instances = 0     # le garde-fou vise deux environnements simultanés, pas ceux-ci
+        Course._instances = 0
         env = Course(circuits=("example",), pas_max=50, recompense=poids)
         env.reset(seed=0, options={"circuit": "example", "meteo": False})
         sortie = []
@@ -116,7 +109,6 @@ def test_config_priorite():
         assert lu == fichier and cfg["graine"] == 7 and cfg["pas"] == config.DEFAUTS["pas"]
         assert cfg["ppo"] == {**config.DEFAUTS["ppo"], "gamma": 0.9}
         assert cfg["recompense"] == {"penalite_choc": 3.0}
-        # la ligne de commande l'emporte, une option non donnée (None) laisse la main au fichier
         cfg, _ = config.charger("x", fichier, {"graine": 9, "pas": None})
         assert cfg["graine"] == 9 and cfg["pas"] == config.DEFAUTS["pas"]
     cfg, lu = config.charger("pilote-sans-fichier")
@@ -142,7 +134,6 @@ def test_config_refuse_les_fautes():
 
 
 def test_configs_des_pilotes():
-    # Les fichiers livrés se chargent, sans clé inconnue ; chacun est libre de ses réglages.
     for pilote in ("driver1", "driver2", "driver3", "driver4", "champion"):
         cfg, fichier = config.charger(pilote)
         assert fichier is not None, pilote

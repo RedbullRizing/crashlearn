@@ -19,7 +19,7 @@ import shutil
 import sys
 from pathlib import Path
 
-sys.modules["gym"] = None   # voir train.py : le dossier gym/ du simulateur fait planter SB3
+sys.modules["gym"] = None
 
 import numpy as np
 import onnx
@@ -57,7 +57,6 @@ def exporter(model: PPO, dossier: Path) -> None:
     torch.onnx.export(Politique(model.policy).eval(), entree, chemin, opset_version=OPSET,
                       input_names=["obs"], output_names=["action"],
                       dynamic_axes={"obs": {0: "n"}, "action": {0: "n"}}, dynamo=False)
-    # Poids à part dans model.onnx.data, comme le demande le sujet.
     onnx.save_model(onnx.load(chemin), chemin, save_as_external_data=True,
                     all_tensors_to_one_file=True, location="model.onnx.data", size_threshold=0)
     for nom in ("agent.py", "features.py"):

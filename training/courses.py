@@ -28,8 +28,8 @@ from training.metrics import SuiviCourse, agreger
 from training.runs import Run
 
 VITESSE = 3.0
-SECTEUR_AVANT = 1.05   # rad, ±60° autour de l'avant
-BRAQUAGE_MAX = 0.41    # rad, borne du simulateur
+SECTEUR_AVANT = 1.05
+BRAQUAGE_MAX = 0.41
 
 
 def piloter(obs: dict) -> tuple[float, float]:
@@ -48,7 +48,6 @@ def piloter(obs: dict) -> tuple[float, float]:
     indice = int(np.argmax(np.where(devant, lidar, -np.inf)))
 
     braquage = float(np.clip(angles[indice], BRAQUAGE_MAX * -1, BRAQUAGE_MAX))
-    # Ralentir quand ça se resserre droit devant.
     libre = float(lidar[n // 2])
     vitesse = VITESSE if libre > 3.0 else VITESSE * 0.4
     return vitesse, braquage
@@ -96,8 +95,6 @@ def main() -> None:
         episodes = []
 
         for n in range(args.episodes):
-            # Une graine par épisode, dérivée de la graine du run : rejouable,
-            # mais chaque épisode reste différent du précédent.
             resultats = jouer_episode(args.graine + n, args.pas_max)
             episodes.append(resultats)
 
@@ -108,9 +105,6 @@ def main() -> None:
 
             run.mesurer(agreger([resultats]), pas=n)
 
-        # Le bilan est un chiffre unique, pas une série temporelle : il va dans
-        # un fichier à côté des courbes, pas dans TensorBoard — sinon il double
-        # chaque métrique sous un préfixe qui lui fait perdre son sens.
         bilan = agreger(episodes)
         run.enregistrer_bilan(bilan)
 

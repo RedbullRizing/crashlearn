@@ -15,8 +15,6 @@ import onnxruntime
 
 class Agent:
     def __init__(self):
-        # Chemins résolus depuis ce fichier, jamais depuis le cwd : le tournoi
-        # charge plusieurs agents depuis des dossiers différents.
         here = os.path.dirname(os.path.abspath(__file__))
         self.model = onnxruntime.InferenceSession(os.path.join(here, "model.onnx"))
         self.entree = self.model.get_inputs()[0].name
@@ -27,7 +25,7 @@ class Agent:
         self.action_precedente = np.zeros(2, dtype=np.float32)
 
     def predict(self, obs: dict, info: dict) -> tuple[float, float]:
-        if info.get("step_count", 0) == 0:   # nouvelle course
+        if info.get("step_count", 0) == 0:
             self.action_precedente = np.zeros(2, dtype=np.float32)
 
         x = self.features["observation"](obs, info, self.action_precedente)
