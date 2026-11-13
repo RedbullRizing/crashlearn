@@ -41,7 +41,7 @@ def courir(tache: tuple[str, str]) -> tuple[str, list[tuple]]:
 def ligne(nom: str, courses: list[tuple]) -> str:
     total = len(courses)
     finies = [c for c in courses if c[2]]
-    tours = {circuit: min((t for c in finies if c[0] == circuit for t in c[4]), default=None)
+    tours = {circuit: min((t for c in courses if c[0] == circuit for t in c[4]), default=None)
              for circuit in CIRCUITS}
     return (f"{nom:<40} finies {len(finies):>2}/{total} "
             f"sec {sum(1 for c in finies if c[1] == 0)}/{total // 2} "
