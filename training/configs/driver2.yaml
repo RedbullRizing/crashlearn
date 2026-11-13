@@ -4,16 +4,15 @@
 # option de la ligne de commande (PAS=, ENVS=, GRAINE=) l'emporte sur ce fichier.
 # La configuration effective de chaque run est recopiée dans son meta.json.
 #
-# Les valeurs ci-dessous sont celles du MDP v1 : seule la graine diffère d'un
-# pilote à l'autre. Le contrat d'observation et d'action (features.py) reste commun.
+# Prudent : un choc contre un mur coûte 5 au lieu de 2.
 
-graine: 2            # fixe l'aléatoire de Python, numpy, torch et du simulateur
-pas: 200000          # pas d'entraînement au total ; 1000000 pour un run complet
-envs: 4              # environnements en parallèle, un processus chacun
-eval_episodes: 2     # courses par circuit de validation, à la fin du run
+graine: 2
+pas: 500000         # 300 000 pas finissaient déjà 6 courses de validation sur 6
+envs: 8              # un pilote à la fois, un environnement par cœur
+eval_episodes: 2     # par circuit de validation : une course au sec, une sous la pluie
 
-ppo:                 # toute option de stable_baselines3.PPO
-  n_steps: 512       # par environnement : 512 × envs pas par mise à jour
+ppo:
+  n_steps: 256       # × 8 envs = 2 048 pas par mise à jour
   batch_size: 64
   gamma: 0.99
   learning_rate: 0.0003
@@ -21,9 +20,12 @@ ppo:                 # toute option de stable_baselines3.PPO
 env:
   pas_max: 3000      # troncature d'un épisode (150 s)
   fin_sur_choc: true # un choc contre un mur termine l'épisode
+  meteo: true        # adhérence et bruit LiDAR tirés toutes les 20 s
+  adversaires: []
 
 recompense:          # poids de la récompense par pas, voir training/env.py
-  cout_temps: 0.01        # retiré à chaque pas : la lenteur coûte
-  poids_douceur: 0.05     # × variation de braquage entre deux pas
-  penalite_choc: 2.0
+  cout_temps: 0.01
+  poids_douceur: 0.05
+  penalite_choc: 5.0
+  penalite_contact: 1.0
   penalite_dnf: 10.0

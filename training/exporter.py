@@ -29,7 +29,7 @@ from stable_baselines3 import PPO
 
 import env_simulation as sim
 from agent_loader import validate_and_load_agent
-from training.env import CourseSolo
+from training.env import Course
 from training.metrics import SuiviCourse
 from training.runs import RACINE_RUNS
 
@@ -65,7 +65,7 @@ def exporter(model: PPO, dossier: Path) -> None:
 
 
 def observations_reelles(model: PPO, circuit: str, n: int = 500) -> np.ndarray:
-    env = CourseSolo(circuits=[circuit], fin_sur_choc=False)
+    env = Course(circuits=[circuit], fin_sur_choc=False)
     obs, _ = env.reset(seed=0)
     lot = []
     for _ in range(n):

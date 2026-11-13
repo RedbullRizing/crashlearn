@@ -45,7 +45,7 @@ ENVS     ?=
 CIRCUITS ?=
 
 .DEFAULT_GOAL := help
-.PHONY: help sim-check sim-hash sim-manifest courses runs garder export build check test venv record replay video train board board-stop verify verify-gp clean
+.PHONY: help sim-check sim-hash sim-manifest courses runs garder export build check test venv record replay video train board board-stop verify verify-gp grand-prix clean
 
 help:                    ## Affiche cette aide
 	@grep -E '^[a-z-]+:.*?## .*$$' $(MAKEFILE_LIST) \
@@ -159,6 +159,10 @@ courses:                 ## Fait tourner des courses : make courses CIRCUIT=Spa 
 	$(DC_RUN) sim python -m training.courses \
 		--pilote $(DRIVER) --episodes $(EPISODES) \
 		--graine $(GRAINE) --circuit $(CIRCUIT)
+
+PILOTES ?= driver1,driver2,driver3,driver4
+grand-prix:              ## Course à plusieurs : make grand-prix PILOTES=champion,driver1,driver2,driver3 [CIRCUITS=Spa]
+	$(DC_RUN) sim python -m training.grand_prix --pilotes $(PILOTES) $(if $(CIRCUITS),--circuits $(CIRCUITS))
 
 board:                   ## Démarre TensorBoard sur http://localhost:6006
 	@$(DC) up -d tensorboard

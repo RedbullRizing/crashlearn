@@ -25,15 +25,16 @@ DEFAUTS = {
     "pas": 200_000,
     "envs": 4,
     "eval_episodes": 2,
+    "depuis": "",        # run de départ dans runs/ : vide, on part de zéro
     # n_steps = 512 × 4 envs = 2 048 pas par mise à jour, comme le défaut de SB3 à un seul
     # env. Toute autre clé de `PPO(...)` est acceptée ; SB3 refuse celles qu'il ne connaît pas.
     "ppo": {"n_steps": 512, "batch_size": 64, "gamma": 0.99, "learning_rate": 3e-4},
-    "env": {"pas_max": 3000, "fin_sur_choc": True},
+    "env": {"pas_max": 3000, "fin_sur_choc": True, "meteo": True, "adversaires": []},
     "recompense": {},     # surcharges des poids de `env.RECOMPENSE_DEFAUT`
 }
 
 _ENTIERS = ("graine", "pas", "envs", "eval_episodes")
-_CLES_ENV = {"pas_max", "fin_sur_choc"}
+_CLES_ENV = {"pas_max", "fin_sur_choc", "meteo", "adversaires"}
 
 
 def _lire(chemin: Path) -> dict:
