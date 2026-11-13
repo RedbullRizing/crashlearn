@@ -1,0 +1,31 @@
+# Réglages d'entraînement du pilote driver4 : `make train DRIVER=driver4`.
+#
+# Chacun fait diverger son pilote ici, sans toucher à env.py ni train.py. Une
+# option de la ligne de commande (PAS=, ENVS=, GRAINE=) l'emporte sur ce fichier.
+# La configuration effective de chaque run est recopiée dans son meta.json.
+#
+# Les valeurs ci-dessous sont celles du MDP v1. Graine 42 et 8 environnements :
+# mêmes réglages que le run de référence CRA-91 (archives/driver4-20261030-124516-ppo),
+# lancé avec 1000000 pas. Le contrat d'observation et d'action (features.py)
+# reste commun.
+
+graine: 42           # fixe l'aléatoire de Python, numpy, torch et du simulateur
+pas: 200000          # pas d'entraînement au total ; 1000000 pour un run complet
+envs: 8              # environnements en parallèle, un processus chacun
+eval_episodes: 2     # courses par circuit de validation, à la fin du run
+
+ppo:                 # toute option de stable_baselines3.PPO
+  n_steps: 512       # par environnement : 512 × envs pas par mise à jour
+  batch_size: 64
+  gamma: 0.99
+  learning_rate: 0.0003
+
+env:
+  pas_max: 3000      # troncature d'un épisode (150 s)
+  fin_sur_choc: true # un choc contre un mur termine l'épisode
+
+recompense:          # poids de la récompense par pas, voir training/env.py
+  cout_temps: 0.01        # retiré à chaque pas : la lenteur coûte
+  poids_douceur: 0.05     # × variation de braquage entre deux pas
+  penalite_choc: 2.0
+  penalite_dnf: 10.0

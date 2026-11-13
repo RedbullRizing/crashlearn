@@ -1,7 +1,12 @@
 """Entraîne un pilote avec PPO sur `CourseSolo`, puis l'évalue en course.
 
+    make train DRIVER=driver1                                  # training/configs/driver1.yaml
     make train DRIVER=driver1 PAS=1000000
     make train DRIVER=driver1 PAS=200000 CIRCUITS=example     # débogage
+
+Les réglages du pilote (graine, hyperparamètres PPO, poids de la récompense)
+viennent de `training/configs/<pilote>.yaml` ; une option de la ligne de commande
+l'emporte sur le fichier (voir `config.py`).
 
 Un run complet : `meta.json` (graine, commit, configuration), les courbes PPO
 dans TensorBoard, `model.zip` (Stable-Baselines3), puis une évaluation sur le
@@ -30,7 +35,8 @@ from stable_baselines3.common.logger import configure
 from stable_baselines3.common.vec_env import SubprocVecEnv
 
 import env_simulation as sim
-from training.env import ENTRAINEMENT, VALIDATION, CourseSolo
+from training.config import charger
+from training.env import ENTRAINEMENT, VALIDATION, CourseSolo, parametres_recompense
 from training.metrics import SuiviCourse, agreger
 from training.runs import Run
 
@@ -61,45 +67,48 @@ def evaluer(model: PPO, circuits: list[str], episodes: int, graine: int) -> list
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--pilote", default="driver1")
-    parser.add_argument("--pas", type=int, default=200_000, help="pas d'entraînement au total")
-    parser.add_argument("--envs", type=int, default=4, help="environnements en parallèle")
+    parser.add_argument("--config", help="fichier YAML (défaut : training/configs/<pilote>.yaml s'il existe)")
+    # Pas de valeur par défaut ici : une option non donnée laisse la main au fichier.
+    parser.add_argument("--pas", type=int, help="pas d'entraînement au total")
+    parser.add_argument("--envs", type=int, help="environnements en parallèle")
     parser.add_argument("--circuits", default="", help="séparés par des virgules (défaut : ENTRAINEMENT)")
-    parser.add_argument("--graine", type=int, default=42)
-    parser.add_argument("--eval-episodes", type=int, default=2, help="par circuit d'évaluation")
+    parser.add_argument("--graine", type=int)
+    parser.add_argument("--eval-episodes", type=int, help="par circuit d'évaluation")
     args = parser.parse_args()
     circuits = args.circuits.split(",") if args.circuits else list(ENTRAINEMENT)
     # On évalue sur des circuits jamais vus, sauf en débogage sur un circuit choisi à la main.
     circuits_eval = list(VALIDATION) if not args.circuits else circuits
 
-    # Hyperparamètres par défaut de SB3, sauf n_steps : 512 × 4 envs = 2 048
-    # pas par mise à jour, comme le défaut à un seul env. À régler dans CRA-72.
-    config = {
-        "graine": args.graine,
-        "circuits": circuits,
-        "circuits_eval": circuits_eval,
-        "pas": args.pas,
-        "envs": args.envs,
-        "ppo": {"n_steps": 512, "batch_size": 64, "gamma": 0.99, "learning_rate": 3e-4},
-        "env": {"pas_max": 3000, "fin_sur_choc": True},
-    }
+    # Hyperparamètres par défaut de SB3, sauf n_steps (voir config.DEFAUTS). À régler dans CRA-72.
+    config, fichier = charger(args.pilote, args.config, {
+        "graine": args.graine, "pas": args.pas, "envs": args.envs, "eval_episodes": args.eval_episodes,
+    })
+    # Poids complets dans meta.json, y compris ceux qu'aucun fichier ne surcharge ;
+    # une clé inconnue s'arrête ici, avant de lancer les processus.
+    config["recompense"] = parametres_recompense(config["recompense"])
+    config["fichier"] = str(fichier) if fichier else None
+    config["circuits"] = circuits
+    config["circuits_eval"] = circuits_eval
+    print(f"  configuration : {fichier or 'valeurs par défaut (aucun fichier)'}")
 
     with Run(pilote=args.pilote, algo="ppo", config=config,
-             graine=args.graine, circuits=circuits) as run:
+             graine=config["graine"], circuits=circuits) as run:
         print(f"  run : {run.dossier}")
-        envs = make_vec_env(CourseSolo, n_envs=args.envs, seed=args.graine,
+        envs = make_vec_env(CourseSolo, n_envs=config["envs"], seed=config["graine"],
                             vec_env_cls=SubprocVecEnv,
-                            env_kwargs={"circuits": circuits, **config["env"]})
+                            env_kwargs={"circuits": circuits, **config["env"],
+                                        "recompense": config["recompense"]})
 
-        model = PPO("MlpPolicy", envs, seed=args.graine, verbose=0, **config["ppo"])
+        model = PPO("MlpPolicy", envs, seed=config["graine"], verbose=0, **config["ppo"])
         # Courbes PPO directement dans le dossier du run, à côté de meta.json,
         # plutôt que dans un sous-dossier PPO_1 créé par SB3.
         model.set_logger(configure(str(run.dossier), ["stdout", "tensorboard"]))
-        model.learn(total_timesteps=args.pas)
+        model.learn(total_timesteps=config["pas"])
         envs.close()
         model.save(run.dossier / "model.zip")
 
-        print(f"\n  évaluation, {args.eval_episodes} course(s) par circuit :")
-        episodes = evaluer(model, circuits_eval, args.eval_episodes, args.graine + 10_000)
+        print(f"\n  évaluation, {config['eval_episodes']} course(s) par circuit :")
+        episodes = evaluer(model, circuits_eval, config["eval_episodes"], config["graine"] + 10_000)
         bilan = agreger(episodes)
         run.enregistrer_bilan(bilan)
         for cle, valeur in sorted(bilan.items()):

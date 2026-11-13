@@ -47,9 +47,12 @@ Entraîner et suivre les courbes sur <http://localhost:6006> :
 
 ```bash
 make courses DRIVER=driver1 CIRCUIT=Spa EPISODES=5   # banc d'évaluation, écrit dans runs/
-make train DRIVER=driver1                            # dès que training/train.py existe (CRA-71)
+make train DRIVER=driver1                            # réglages de training/configs/driver1.yaml
+make train DRIVER=driver1 PAS=1000000 ENVS=8 GRAINE=7   # une option l'emporte sur le fichier
 make board
 ```
+
+**Faire diverger son pilote sans toucher au code partagé.** Chacun a son fichier `training/configs/<pilote>.yaml` : graine, nombre de pas et d'environnements, hyperparamètres PPO, poids de la récompense (`cout_temps`, `poids_douceur`, `penalite_choc`, `penalite_dnf`) et options de l'environnement. On ne modifie que le sien, et jamais `env.py` ni `train.py` pour régler un pilote. Le fichier lu et la configuration effective sont recopiés dans le `meta.json` du run ; une clé inconnue ou mal typée arrête l'entraînement avant son lancement. Ce qui change le contrat avec `agent.py` (observation, action, `features.py`) n'est pas configurable : cela se décide à l'équipe.
 
 ### 4. Suivre et garder ses runs
 
