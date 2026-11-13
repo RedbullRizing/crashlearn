@@ -7,12 +7,12 @@
 # Référence du MDP v2 : poids par défaut.
 
 graine: 1
-pas: 1500000
-envs: 2              # quatre pilotes entraînés en même temps sur 8 cœurs
+pas: 500000         # 300 000 pas finissaient déjà 6 courses de validation sur 6
+envs: 8              # un pilote à la fois, un environnement par cœur
 eval_episodes: 2     # par circuit de validation : une course au sec, une sous la pluie
 
 ppo:
-  n_steps: 1024      # × 2 envs = 2 048 pas par mise à jour
+  n_steps: 256       # × 8 envs = 2 048 pas par mise à jour
   batch_size: 64
   gamma: 0.99
   learning_rate: 0.0003

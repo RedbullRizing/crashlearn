@@ -29,7 +29,9 @@ import sys
 # s'importe sous le nom f110_gym, il n'est pas touché.
 sys.modules["gym"] = None
 
+import torch
 from stable_baselines3 import PPO
+from stable_baselines3.common.callbacks import CheckpointCallback
 from stable_baselines3.common.env_util import make_vec_env
 from stable_baselines3.common.logger import configure
 from stable_baselines3.common.vec_env import SubprocVecEnv
@@ -70,6 +72,9 @@ def evaluer(model: PPO, circuits: list[str], episodes: int, graine: int,
 
 
 def main() -> None:
+    # Un réseau de 64×64 n'a rien à gagner de 8 fils : ils se battent avec les
+    # 8 simulateurs pour les cœurs. Mesuré : 484 pas/s à 8 fils, 659 à un seul.
+    torch.set_num_threads(1)
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--pilote", default="driver1")
     parser.add_argument("--config", help="fichier YAML (défaut : training/configs/<pilote>.yaml s'il existe)")
@@ -113,7 +118,10 @@ def main() -> None:
         # Courbes PPO directement dans le dossier du run, à côté de meta.json,
         # plutôt que dans un sous-dossier PPO_1 créé par SB3.
         model.set_logger(configure(str(run.dossier), ["stdout", "tensorboard"]))
-        model.learn(total_timesteps=config["pas"])
+        # Une sauvegarde tous les 100 000 pas : un entraînement coupé ne perd pas tout.
+        sauvegarde = CheckpointCallback(save_freq=max(100_000 // config["envs"], 1),
+                                        save_path=str(run.dossier / "sauvegardes"), name_prefix="model")
+        model.learn(total_timesteps=config["pas"], callback=sauvegarde)
         envs.close()
         model.save(run.dossier / "model.zip")
 
