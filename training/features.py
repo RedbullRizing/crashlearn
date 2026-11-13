@@ -25,20 +25,20 @@ aucun adversaire et ces entrées restent à zéro.
 
 import numpy as np
 
-RAYONS_AVANT = slice(23, 77)   # 54 rayons, ±95,4° autour du cap
-RAYONS_PAR_SECTEUR = 3         # 18 secteurs de 10,8°
-LIDAR_MIN = 0.1                # m, troncature du simulateur
+RAYONS_AVANT = slice(23, 77)
+RAYONS_PAR_SECTEUR = 3
+LIDAR_MIN = 0.1
 LIDAR_MAX = 15.0
-VITESSE_MIN = -2.0             # m/s, bornes de la commande du simulateur :
-VITESSE_MAX = 10.0             # la marche arrière sert à se dégager d'un mur
-BRAQUAGE_MAX = 0.4189          # rad, borne de la commande
-FRICTION_SEC, FRICTION_PLUIE = 1.0, 0.5   # adhérence : 1 au sec, 0,5 sous forte pluie
+VITESSE_MIN = -2.0
+VITESSE_MAX = 10.0
+BRAQUAGE_MAX = 0.4189
+FRICTION_SEC, FRICTION_PLUIE = 1.0, 0.5
 
-ADVERSAIRES = 3                # les trois autres voitures au plus
-PORTEE_ADVERSAIRE = 10.0       # m : au-delà, un adversaire est à la limite de l'entrée
-PAR_ADVERSAIRE = 5             # présent, x, y, cap relatif, vitesse
+ADVERSAIRES = 3
+PORTEE_ADVERSAIRE = 10.0
+PAR_ADVERSAIRE = 5
 
-TAILLE_OBSERVATION = 54 // RAYONS_PAR_SECTEUR + 5 + ADVERSAIRES * PAR_ADVERSAIRE   # 38
+TAILLE_OBSERVATION = 54 // RAYONS_PAR_SECTEUR + 5 + ADVERSAIRES * PAR_ADVERSAIRE
 
 
 def adversaires(obs: dict) -> np.ndarray:
@@ -46,7 +46,7 @@ def adversaires(obs: dict) -> np.ndarray:
     voiture (x vers l'avant, y vers la gauche). Absents : des zéros."""
     vus = []
     for adv in (obs.get("opponents") or {}).values():
-        if adv["status"] != 1:      # la voiture elle-même, un absent ou un abandon
+        if adv["status"] != 1:
             continue
         x, y = adv["x_rel"], adv["y_rel"]
         vus.append((x * x + y * y, [1.0,
@@ -70,11 +70,8 @@ def observation(obs: dict, info: dict, action_precedente: np.ndarray) -> np.ndar
     """
     rayons = np.asarray(obs["lidar"], dtype=np.float32)[RAYONS_AVANT]
     secteurs = rayons.reshape(-1, RAYONS_PAR_SECTEUR).min(axis=1)
-    # Logarithme : en linéaire sur 15 m, tout ce qui compte (0,1 à 2 m) tiendrait
-    # dans [0 ; 0,13]. Ici 1 m vaut 0,46.
     secteurs = np.log(np.clip(secteurs, LIDAR_MIN, LIDAR_MAX) / LIDAR_MIN) / np.log(LIDAR_MAX / LIDAR_MIN)
 
-    # L'adhérence est donnée par le simulateur : la pluie se voit, au lieu de se deviner.
     friction = float(info.get("friction_current", FRICTION_SEC))
     pluie = np.clip((FRICTION_SEC - friction) / (FRICTION_SEC - FRICTION_PLUIE), 0.0, 1.0)
 

@@ -50,7 +50,7 @@ def main() -> None:
     n = 0
     for circuit in args.circuits.split(","):
         for c in range(args.courses):
-            ordre = noms[n % len(noms):] + noms[:n % len(noms)]   # la grille tourne
+            ordre = noms[n % len(noms):] + noms[:n % len(noms)]
             resultats, rangs = course([agents[nom] for nom in ordre], circuit, args.graine + n)
             n += 1
             ligne = []

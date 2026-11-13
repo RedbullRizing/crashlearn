@@ -27,9 +27,8 @@ RACINE = Path(__file__).resolve().parent.parent
 RUNS = RACINE / "runs"
 ARCHIVES = RACINE / "archives"
 
-# Poids de modèles, checkpoints, enregistrements : lourds, jamais archivés.
 EXCLUS = {".zip", ".pt", ".pth", ".onnx", ".data", ".npz", ".pkl", ".mp4"}
-TAILLE_ALERTE = 20 * 1024 * 1024   # au-delà, git souffre : on prévient
+TAILLE_ALERTE = 20 * 1024 * 1024
 
 
 def _fichiers_a_garder(source: Path) -> list[Path]:
@@ -74,7 +73,6 @@ def main() -> int:
         destination.parent.mkdir(parents=True, exist_ok=True)
         shutil.copy2(f, destination)
 
-    # La note dit pourquoi ce run compte : c'est ce qu'on relira en écrivant le rapport.
     note = args.note.strip() or "(pas de note)"
     (cible / "note.md").write_text(
         f"# {args.run}\n\n{note}\n\n"

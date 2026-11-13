@@ -25,7 +25,6 @@ from __future__ import annotations
 
 from dataclasses import dataclass, field
 
-# Valeurs de agent_status telles que le moteur les définit.
 DNF = 0
 ACTIF = 1
 ARRIVE = 2
@@ -91,8 +90,6 @@ class SuiviCourse:
             if bool(info["collisions"]["vehicle"][i]):
                 resultat.chocs_voiture += 1
 
-            # La bascule vers l'abandon est le seul moment où la cause est
-            # lisible : dès le pas suivant, `stagnation` est remis à False.
             if statut_avant == ACTIF and statut == DNF:
                 stagne = bool(info["stagnation"][i])
                 resultat.cause_abandon = CAUSE_STAGNATION if stagne else CAUSE_SORTIE
@@ -135,8 +132,6 @@ def agreger(episodes: list[dict[int, ResultatVoiture]], tours_requis: int = 3) -
         mesures["tour/temps_moyen"] = sum(tous_les_tours) / len(tous_les_tours)
         mesures["tour/meilleur"] = min(tous_les_tours)
 
-    # Taux d'abandon par cause, rapporté au nombre total de voitures : c'est ce
-    # qui dit s'il faut travailler la prudence ou au contraire l'agressivité.
     for cause in (CAUSE_STAGNATION, CAUSE_SORTIE):
         n = sum(1 for v in abandons if v.cause_abandon == cause)
         mesures[f"abandon/{cause}"] = n / total

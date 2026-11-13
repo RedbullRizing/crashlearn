@@ -26,9 +26,6 @@ import math
 import os
 import sys
 
-# env_simulation.py vit à la racine du conteneur (/app) ou de simulation/ en local ;
-# ni l'un ni l'autre n'est automatiquement sur sys.path quand ce script est lancé
-# depuis training/tools/.
 for _candidate in (os.getcwd(), os.path.join(os.getcwd(), "simulation")):
     if _candidate not in sys.path:
         sys.path.insert(0, _candidate)
@@ -52,7 +49,6 @@ from env_simulation import (
 
 DEFAULT_MAPS = ["example", "Monza", "Montreal"]
 
-# Constantes de module à relever telles quelles (garanties stables à l'évaluation).
 _CONSTANT_NAMES = [
     "_FREQ_HZ", "_DECISION_FREQ_HZ", "_PHYSICS_STEPS",
     "_FRICTION_LO", "_FRICTION_HI", "_FRICTION_INTERVAL_SEC",
@@ -83,7 +79,6 @@ class Bounds:
     def __repr__(self):
         if self.n == 0:
             return "(jamais observé)"
-        # 5 décimales : à 4, un progress de 0,99996 s'affiche 1.0000 alors que le moteur le garde dans [0, 1[.
         return f"[{self.lo:.5f}, {self.hi:.5f}]  (n={self.n})"
 
 
@@ -115,20 +110,15 @@ def _policy(car_id, step_i, obs, sim_obj):
     x, y, yaw = float(state[0]), float(state[1]), float(state[4])
 
     if car_id == 0:
-        # Pilote "propre" : sert de référence pour progress/lap_count/rank.
         steer = _pure_pursuit_steer(x, y, yaw, sim_obj._waypoints, sim_obj._arc, sim_obj._total_arc)
         return 3.0, steer
 
     if car_id == 1:
-        # Volant erratique et rapide : vise à provoquer une sortie de piste
-        # (wall_hit, agent_status==0, stagnation).
         steer = _pure_pursuit_steer(x, y, yaw, sim_obj._waypoints, sim_obj._arc, sim_obj._total_arc)
         steer += 0.35 * math.sin(step_i * 0.5)
         return 6.0, max(_PARAMS["s_min"], min(_PARAMS["s_max"], steer))
 
     if car_id == 2:
-        # Fonce sur l'adversaire 0 pour provoquer une collision voiture-voiture
-        # (vehicle_hit) — utilise le canal opponents, jamais le lidar.
         opp0 = obs["opponents"][0]
         if opp0["status"] == 1:
             steer = max(_PARAMS["s_min"], min(_PARAMS["s_max"], math.atan2(opp0["y_rel"], opp0["x_rel"])))
@@ -136,7 +126,6 @@ def _policy(car_id, step_i, obs, sim_obj):
             steer = _pure_pursuit_steer(x, y, yaw, sim_obj._waypoints, sim_obj._arc, sim_obj._total_arc)
         return 4.0, steer
 
-    # car_id == 3 (ou plus) : politique aléatoire, sert de plancher (cf. CRA-8).
     return 2.0, 0.08 * math.sin(step_i * 0.12)
 
 
@@ -146,11 +135,9 @@ def run_map(map_name, steps, num_cars, seed, report, speed_override=None):
     sim_obj = _get_sim()
 
     obs_list = [get_obs(i) for i in range(num_cars)]
-    last_info = None  # statut au pas précédent : sert à ne noter que les ordres d'une voiture active
+    last_info = None
 
     for step_i in range(steps):
-        # --- Ordre imposé, vérifié explicitement (c'est le "script court" de CRA-6) ---
-        # 1) apply_action() pour CHAQUE agent, avant tout pas de simulation.
         for cid in range(num_cars):
             speed, steer = _policy(cid, step_i, obs_list[cid], sim_obj)
             if speed_override is not None:
@@ -158,16 +145,11 @@ def run_map(map_name, steps, num_cars, seed, report, speed_override=None):
             if last_info is None or last_info["agent_status"][cid] == 1:
                 report.see_command(speed)
             apply_action(cid, speed, steer)
-        # 2) UN SEUL simulation_step().
         simulation_step()
-        # 3) UN SEUL get_step_info(), après le pas.
         info = get_step_info()
-        # Vérification en dur, pas seulement structurelle : si un appel manquait ou
-        # était doublé quelque part, step_count n'avancerait pas exactement de 1.
         assert info["step_count"] == step_i + 1, (
             f"ordre de boucle rompu : step_count={info['step_count']} attendu={step_i + 1}"
         )
-        # 4) get_obs() par agent, après le pas — jamais avant apply_action().
         obs_list = [get_obs(i) for i in range(num_cars)]
 
         for cid in range(num_cars):
@@ -188,14 +170,13 @@ class Report:
             k: Bounds() for k in ("velocity", "steering", "progress", "lap_count", "rank")
         }
         self.lidar = Bounds()
-        # Vitesses ordonnées à une voiture active, avant et après l'écrêtage de apply_action().
         self.cmd_raw = Bounds()
         self.cmd_clipped = Bounds()
         self.opp_scalar = {
             k: Bounds() for k in ("x_rel", "y_rel", "yaw_rel", "speed", "progress", "lap_count")
         }
         self.opp_status_seen = set()
-        self.opp_inactive_nonzero = 0  # emplacements inactifs qui NE seraient PAS à zéro
+        self.opp_inactive_nonzero = 0
 
         self.info_scalar = {
             k: Bounds() for k in ("step_count", "time_elapsed", "progress_delta", "friction_current", "max_progress")
@@ -210,14 +191,12 @@ class Report:
         self.obs_keys = set()
         self.info_keys = set()
         self.opponent_keys = set()
-        self.anomalies = []  # diagnostics quand un opponent "actif" a une position aberrante
+        self.anomalies = []
 
-        # Ce que la boucle ne montrait pas : valeurs de ranks, motifs de opponents_mask,
-        # cause de chaque abandon et état au moment de l'arrivée (lap_count y vaut 3).
         self.ranks_seen = set()
         self.mask_patterns = set()
-        self.causes = {}            # "stagnation" / "sortie de piste" / "arrivée" -> nombre
-        self.finishes = []          # un instantané par voiture arrivée
+        self.causes = {}
+        self.finishes = []
 
     def see_command(self, speed):
         self.cmd_raw.see(speed)
@@ -226,13 +205,9 @@ class Report:
     def see_transition(self, map_name, cid, prev, now, info, obs):
         """Enregistre la cause d'un changement de statut, au pas où il se produit."""
         if prev == 1 and now == 0:
-            # `stagnation` vaut True au seul pas de l'élimination pour stagnation ;
-            # il reste False pour une sortie de piste (le test géométrique n'y touche pas).
             cause = "stagnation" if info["stagnation"][cid] else "sortie de piste"
         elif prev == 1 and now == 2:
             cause = "arrivée"
-            # progress / lap_count / rank viennent des compteurs du moteur, pas de la pose :
-            # ils restent fiables même sur la voiture qui vient de franchir la ligne.
             self.finishes.append({
                 "map": map_name, "car": cid, "lap_count": obs["lap_count"],
                 "progress": round(obs["progress"], 4), "rank": obs["rank"],
@@ -252,12 +227,6 @@ class Report:
             self.obs_keys |= set(obs.keys())
             observer_active = info["agent_status"][cid] == 1
 
-            # PIÈGE (voir Report.print_all) : get_obs(agent_id) ne vérifie jamais
-            # si agent_id est encore actif. Une fois gelé (DNF/arrivé), sa position
-            # réelle est le sentinel hors-piste (~10000, 10000) ; tout ce qu'il calcule
-            # depuis là (velocity, steering, progress, et surtout x_rel/y_rel de SES
-            # adversaires) est alors sans rapport avec la course. On ne l'agrège donc
-            # que si l'observateur est actif — mais on le CAPTURE une fois pour preuve.
             if not observer_active:
                 if len(self.anomalies) < 3:
                     self.anomalies.append({

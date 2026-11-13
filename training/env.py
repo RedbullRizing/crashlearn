@@ -46,20 +46,12 @@ def _get_dt_memorise(get_dt):
 laser_models.get_dt = _get_dt_memorise(laser_models.get_dt)
 
 
-# --- météo -------------------------------------------------------------------
-# Le sujet annonce de la pluie au tournoi : adhérence instable et LiDAR bruité.
-# Le simulateur fourni les laisse figés (deux TODO dans `_update_friction` et
-# `_update_lidar_noise`) : au sec, μ = 1 et bruit ±0,1 %. Ses constantes donnent
-# les bornes : μ de 1 (sec) à 0,5 (forte pluie), bruit de ±0,1 % à ±10 %, un
-# changement toutes les 20 s. On remplace ces deux méthodes dans le processus
-# d'entraînement seulement, sans toucher à aucun fichier d'Epitech : le pilote
-# apprend sous un ciel changeant, et lit l'adhérence dans `friction_current`.
 BRUIT_SEC, BRUIT_PLUIE = sim._LIDAR_NOISE, 0.1
 
 
 def _changer_temps(s) -> None:
     """Nouveau temps : une adhérence et un bruit LiDAR liés, de sec à forte pluie."""
-    pluie = float(s._rng.uniform()) ** 2 if s._rng.uniform() < 0.7 else 0.0   # sec 30 % du temps
+    pluie = float(s._rng.uniform()) ** 2 if s._rng.uniform() < 0.7 else 0.0
     s._friction = features.FRICTION_SEC - pluie * (features.FRICTION_SEC - features.FRICTION_PLUIE)
     s._bruit = BRUIT_SEC + pluie * (BRUIT_PLUIE - BRUIT_SEC)
     s._pluie = pluie
@@ -72,7 +64,7 @@ def _update_friction(s) -> None:
     if not getattr(s, "meteo", False):
         return
     s._friction_countdown -= 1
-    if s._friction_countdown <= 0 or s._step_count == 1:   # dès le départ, pas seulement après 20 s
+    if s._friction_countdown <= 0 or s._step_count == 1:
         _changer_temps(s)
         s._friction_countdown = s._next_friction_steps()
 
@@ -82,8 +74,6 @@ def _update_lidar_noise(s) -> None:
         s._last_scan_noise = s._rng.uniform(-BRUIT_SEC, BRUIT_SEC, size=sim._LIDAR_RAYS)
         return
     bruit = s._rng.uniform(-s._bruit, s._bruit, size=sim._LIDAR_RAYS)
-    # « Rayons LiDAR corrompus » : sous forte pluie, jusqu'à 5 % des rayons
-    # décrochent à chaque pas, à la portée minimale ou maximale (après écrêtage).
     casses = s._rng.uniform(size=sim._LIDAR_RAYS) < 0.05 * s._pluie
     bruit[casses] = np.where(s._rng.uniform(size=int(casses.sum())) < 0.5, -1.0, 1e3)
     s._last_scan_noise = bruit
@@ -93,13 +83,11 @@ sim._Sim._update_friction = _update_friction
 sim._Sim._update_lidar_noise = _update_lidar_noise
 
 
-# --- récompense --------------------------------------------------------------
-# Valeurs du MDP v2, et clés que `training/configs/<pilote>.yaml` peut surcharger.
 RECOMPENSE_DEFAUT = {
-    "cout_temps": 0.01,        # par pas : la lenteur coûte
-    "poids_douceur": 0.05,     # × variation de braquage, secondaire devant la progression
-    "penalite_choc": 2.0,      # contre un mur
-    "penalite_contact": 1.0,   # contre une autre voiture
+    "cout_temps": 0.01,
+    "poids_douceur": 0.05,
+    "penalite_choc": 2.0,
+    "penalite_contact": 1.0,
     "penalite_dnf": 10.0,
 }
 
@@ -116,19 +104,8 @@ def parametres_recompense(surcharges: dict | None = None) -> dict:
     return {**RECOMPENSE_DEFAUT, **(surcharges or {})}
 
 
-# --- circuits ----------------------------------------------------------------
-# Séparation des circuits, figée une fois pour toutes (protocole d'entraînement) :
-# la généralisation se mesure sur VALIDATION, et on ne règle jamais rien sur TEST.
-# Validation et test couvrent un court (Oschersleben, 261 m), un long (Spa, 554 m)
-# et des largeurs de 2,0 à 2,6 m. Montreal, le plus étroit (1,39 m), reste à
-# l'entraînement : sans lui, rien n'apprend les pistes à moins de 2 m.
-# `example` est réservé au débogage.
 VALIDATION = ("Oschersleben", "Zandvoort", "MexicoCity")
 TEST = ("Spa", "Budapest", "Sochi")
-# Changer de circuit reconstruit le simulateur (~0,4 s). Au début, un épisode
-# dure 2 à 3 s de simulation : changer à chaque épisode divisait la vitesse
-# d'entraînement par 6. Chaque environnement garde donc son circuit plusieurs
-# épisodes ; la variété vient des 8 environnements en parallèle.
 EPISODES_PAR_CIRCUIT = 20
 
 ENTRAINEMENT = tuple(sorted(set(sim.get_available_maps()) - set(VALIDATION) - set(TEST) - {"example"}))
@@ -155,16 +132,12 @@ class Course(gym.Env):
         self.circuits = list(circuits)
         self.pas_max = pas_max
         self.recompense = parametres_recompense(recompense)
-        # Terminer sur un choc rend le mur très coûteux : la politique apprend à
-        # ne jamais le toucher. Sans ça (essayé sur 1M de pas, 17 circuits, sans
-        # marche arrière), un choc ne coûte que -2 : elle fonce, finit collée à un
-        # mur, et se fait éliminer pour stagnation.
         self.fin_sur_choc = fin_sur_choc
         self.meteo = meteo
         self._episodes = 0
         self._adversaires = []
         if adversaires:
-            from agent_loader import validate_and_load_agent   # outil d'Epitech, chargé comme au tournoi
+            from agent_loader import validate_and_load_agent
             self._adversaires = [validate_and_load_agent(d)[1] for d in adversaires]
 
         self.observation_space = gym.spaces.Box(-1.5, 1.5, (features.TAILLE_OBSERVATION,), np.float32)
@@ -180,7 +153,7 @@ class Course(gym.Env):
             self._episodes += 1
             circuit = self._circuit
         if circuit != (sim.get_current_map() or "example"):
-            sim.set_map(circuit)   # reconstruit le simulateur : seulement si le circuit change
+            sim.set_map(circuit)
 
         nb_adv = options.get("adversaires",
                              int(self.np_random.integers(len(self._adversaires) + 1)))
@@ -193,9 +166,6 @@ class Course(gym.Env):
         sim.reset(num_cars=voitures, seed=int(self.np_random.integers(2**31)))
         sim._get_sim().meteo = options.get("meteo", self.meteo)
 
-        # Longueur exacte utilisée par le moteur pour `progress_delta`, qu'on
-        # convertit en mètres : sans ça, un mètre vaudrait deux fois moins sur
-        # Spa (554 m) que sur Oschersleben (261 m).
         self._longueur = sim._get_sim()._total_arc
         self._pas = 0
         self._info = sim.get_step_info()
@@ -233,9 +203,6 @@ class Course(gym.Env):
         terminated = statut != ACTIF or (choc and self.fin_sur_choc)
         truncated = not terminated and self._pas >= self.pas_max
 
-        # Jamais de get_obs() sur une voiture gelée : sa pose devient le sentinel
-        # hors piste (~10 000 m) et l'observation n'a plus de sens. On garde la
-        # dernière, que la fin d'épisode rend sans importance.
         self._action_precedente = action
         if statut == ACTIF:
             self._obs = features.observation(sim.get_obs(ego), info, action)
