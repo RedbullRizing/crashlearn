@@ -45,7 +45,7 @@ ENVS     ?=
 CIRCUITS ?=
 
 .DEFAULT_GOAL := help
-.PHONY: help sim-check sim-hash sim-manifest courses runs garder export build check test venv record replay video train board board-stop verify verify-gp grand-prix clean
+.PHONY: help sim-check sim-hash sim-manifest evaluer courses runs garder export build check test venv record replay video train board board-stop verify verify-gp grand-prix clean
 
 help:                    ## Affiche cette aide
 	@grep -E '^[a-z-]+:.*?## .*$$' $(MAKEFILE_LIST) \
@@ -154,6 +154,10 @@ train:                   ## Entraîne un pilote d'après training/configs/<DRIVE
 export:                  ## Exporte un run vers submission/<DRIVER> : make export RUN=<nom> DRIVER=driver4
 	@test -n "$(RUN)" || { echo "  Préciser le run : make export RUN=<nom> DRIVER=driver4  (liste : make runs)"; exit 1; }
 	$(DC_RUN) sim python -m training.exporter --run $(RUN) --pilote $(DRIVER) --circuit $(CIRCUIT)
+
+evaluer:                 ## Compare des runs sur 12 courses de validation : make evaluer RUN="run1 run2"
+	@test -n "$(RUN)" || { echo "  Préciser le run : make evaluer RUN=<nom>  (liste : make runs)"; exit 1; }
+	$(DC) run --rm -T sim python -m training.evaluer $(RUN)
 
 courses:                 ## Fait tourner des courses : make courses CIRCUIT=Spa GRAINE=7
 	$(DC_RUN) sim python -m training.courses \
