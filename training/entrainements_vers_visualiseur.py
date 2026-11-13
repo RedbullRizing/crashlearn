@@ -31,7 +31,7 @@ MOTIF_SAUVEGARDE = re.compile(r"model_(\d+)_steps\.zip")
 def lire_json(chemin: Path) -> dict:
     """Le contenu d'un fichier JSON, ou un dictionnaire vide s'il manque ou est illisible."""
     try:
-        return json.loads(chemin.read_text())
+        return json.loads(chemin.read_text(encoding="utf-8"))
     except (OSError, json.JSONDecodeError):
         return {}
 
@@ -39,7 +39,7 @@ def lire_json(chemin: Path) -> dict:
 def note(dossier: Path) -> str:
     """Le texte de `note.md` sans sa ligne de titre, ou une chaîne vide."""
     try:
-        lignes = (dossier / "note.md").read_text().splitlines()
+        lignes = (dossier / "note.md").read_text(encoding="utf-8").splitlines()
     except OSError:
         return ""
     return "\n".join(ligne for ligne in lignes if not ligne.startswith("#")).strip()
@@ -123,7 +123,7 @@ def exporter(sources=SOURCES) -> dict:
 
 def main() -> None:
     donnees = exporter()
-    SORTIE.write_text(json.dumps(donnees, separators=(",", ":"), ensure_ascii=False))
+    SORTIE.write_text(json.dumps(donnees, separators=(",", ":"), ensure_ascii=False), encoding="utf-8")
     archives = sum(f["origine"] == "archive" for f in donnees["runs"])
     print(f"  {SORTIE} : {len(donnees['runs'])} run(s), dont {archives} archivé(s)")
     print("  à voir avec : make visualiseur, onglet Entraînements")

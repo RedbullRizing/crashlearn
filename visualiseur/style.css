@@ -382,8 +382,11 @@ svg.survol .viseur, svg.survol .point { visibility: visible; }
 
 @media (max-width: 900px) {
   #aide, .temps-total, #cadence { display: none; }
-  #telemetrie { gap: 14px; }
+  #telemetrie { gap: 14px; bottom: 124px; }
   .mesure { width: 100px; }
+  #commandes { flex-wrap: wrap; }
+  #vues { flex: 1 1 100%; min-width: 0; }
+  #vues button { flex: 1 1 0; min-width: 0; padding-inline: 4px; overflow: hidden; text-overflow: ellipsis; }
 }
 
 @media (prefers-reduced-motion: reduce) {

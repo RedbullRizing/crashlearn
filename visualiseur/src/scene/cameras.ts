@@ -60,7 +60,8 @@ export class Realisateur {
         break
       case EMBARQUEE:
         camera.position.copy(g.localToWorld(voulue.set(0.12, 0.17, 0)))
-        camera.lookAt(g.localToWorld(regard.set(2, 0.12, 0)))
+        this.regardLisse.copy(g.localToWorld(regard.set(2, 0.12, 0)))
+        camera.lookAt(this.regardLisse)
         break
       case TV:
         if (!this.posteLePlusProche(cible.x, cible.z)) break

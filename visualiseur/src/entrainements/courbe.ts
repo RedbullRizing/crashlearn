@@ -41,6 +41,7 @@ export function dessinerCourbe(conteneur: HTMLElement, series: readonly Serie[],
   const echelon = pasRond(yMax - yMin || 1)
   yMin = Math.floor(yMin / echelon) * echelon
   yMax = Math.ceil(yMax / echelon) * echelon
+  if (yMax === yMin) yMax = yMin + echelon
   const largeurTrace = LARGEUR - MARGE.gauche - MARGE.droite
   const hauteurTrace = HAUTEUR - MARGE.haut - MARGE.bas
   const x = (pas: number): number => MARGE.gauche + (pas / xMax) * largeurTrace
@@ -108,16 +109,25 @@ export function dessinerCourbe(conteneur: HTMLElement, series: readonly Serie[],
     const cadre = svg.getBoundingClientRect()
     const pas = (((e.clientX - cadre.left) / cadre.width) * LARGEUR - MARGE.gauche) / largeurTrace * xMax
     if (pas < 0 || pas > xMax) return cacher()
-    const reference = pleines[0]!.courbe
-    const pasAimante = reference.pas[indiceProche(reference, pas)]!
+    let pasAimante = 0
+    let ecart = Infinity
+    for (const { courbe } of pleines) {
+      const proche = courbe.pas[indiceProche(courbe, pas)]!
+      if (Math.abs(proche - pas) < ecart) {
+        ecart = Math.abs(proche - pas)
+        pasAimante = proche
+      }
+    }
     viseur.setAttribute('x1', String(x(pasAimante)))
     viseur.setAttribute('x2', String(x(pasAimante)))
     let lignes = ''
     pleines.forEach(({ courbe, couleur, nom }, n) => {
+      const termine = pasAimante > courbe.pas.at(-1)!
       const i = indiceProche(courbe, pasAimante)
+      points[n]!.style.display = termine ? 'none' : ''
       points[n]!.setAttribute('cx', String(x(courbe.pas[i]!)))
       points[n]!.setAttribute('cy', String(y(courbe.valeurs[i]!)))
-      lignes += `<div><i style="background:${couleur}"></i><span>${pleines.length > 1 ? echapper(nom) : 'Valeur'}</span><b>${courbe.valeurs[i]!.toFixed(2)}</b></div>`
+      lignes += `<div><i style="background:${couleur}"></i><span>${pleines.length > 1 ? echapper(nom) : 'Valeur'}</span><b>${termine ? '—' : courbe.valeurs[i]!.toFixed(2)}</b></div>`
     })
     bulle.innerHTML = `<div class="entete">${formatEntier(pasAimante)} pas</div>${lignes}`
     bulle.hidden = false

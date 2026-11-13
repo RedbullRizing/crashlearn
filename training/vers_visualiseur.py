@@ -28,6 +28,7 @@ from PIL import Image
 RECORDINGS = Path("recordings")
 CARTES = Path("maps")
 LISTE_DES_COURSES = "courses.json"
+NOMS_RESERVES = ("courses", "entrainements")
 
 SEUIL_MUR = 128
 TOLERANCE_BORD_PX = 1.0
@@ -53,7 +54,7 @@ def lire_carte(circuit: str) -> dict:
     La ligne centrale a quatre colonnes : x, y, largeur à droite, largeur à gauche.
     """
     yaml_carte = chemin_carte(circuit)
-    meta = yaml.safe_load(yaml_carte.read_text())
+    meta = yaml.safe_load(yaml_carte.read_text(encoding="utf-8"))
     image = np.array(Image.open(yaml_carte.with_name(meta["image"])))
     if image.ndim == 3:
         image = image[..., 0]
@@ -225,7 +226,7 @@ def mettre_a_jour_la_liste(dossier: Path, course: dict) -> list[dict]:
     """Ajoute ou remplace la fiche de `course` dans la liste, et retire les courses supprimées."""
     liste = dossier / LISTE_DES_COURSES
     try:
-        anciennes = json.loads(liste.read_text())
+        anciennes = json.loads(liste.read_text(encoding="utf-8"))
     except (FileNotFoundError, json.JSONDecodeError):
         anciennes = []
     fiches = {
@@ -234,8 +235,15 @@ def mettre_a_jour_la_liste(dossier: Path, course: dict) -> list[dict]:
     }
     fiches[course["nom"]] = fiche(course)
     resultat = [fiches[nom] for nom in sorted(fiches)]
-    liste.write_text(json.dumps(resultat, separators=(",", ":")))
+    liste.write_text(json.dumps(resultat, separators=(",", ":")), encoding="utf-8")
     return resultat
+
+
+def chemin_de_sortie(dossier: Path, nom: str) -> Path:
+    """Le JSON d'une course, en refusant les noms qui écraseraient une liste du visualiseur."""
+    if nom in NOMS_RESERVES:
+        raise ValueError(f"« {nom} » est réservé aux listes du visualiseur : choisir un autre NAME")
+    return dossier / f"{nom}.json"
 
 
 def main() -> None:
@@ -243,9 +251,12 @@ def main() -> None:
     parser.add_argument("--nom", required=True, help="nom de la course dans recordings/, sans extension")
     args = parser.parse_args()
 
+    try:
+        sortie = chemin_de_sortie(RECORDINGS, args.nom)
+    except ValueError as erreur:
+        parser.error(str(erreur))
     course = convertir(RECORDINGS / f"{args.nom}.npz")
-    sortie = RECORDINGS / f"{args.nom}.json"
-    sortie.write_text(json.dumps(course, separators=(",", ":")))
+    sortie.write_text(json.dumps(course, separators=(",", ":")), encoding="utf-8")
     mettre_a_jour_la_liste(RECORDINGS, course)
     print(f"  {sortie} : {course['circuit']}, {len(course['voitures'])} voiture(s), {course['pas']} pas")
     print(f"  à voir avec : make visualiseur, puis choisir {args.nom}")

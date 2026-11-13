@@ -145,8 +145,6 @@ video:                   ## Exporte la course en MP4 -> recordings/<NAME>.mp4
 		--npz /app/recordings/$(NAME).npz \
 		--record /app/recordings/$(NAME).mp4 --no-telemetry
 
-# Le visualiseur 3D tourne dans le navigateur, hors du conteneur : il relit des
-# fichiers et ne touche jamais au simulateur, donc jamais à un entraînement.
 vue:                     ## Prépare une course pour le visualiseur 3D -> recordings/<NAME>.json
 	$(DC) run --rm sim python -m training.vers_visualiseur --nom $(NAME)
 

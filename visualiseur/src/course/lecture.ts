@@ -56,7 +56,7 @@ export class Lecture {
 
   poser(voitures: readonly Voiture[]): number {
     const position = this.temps / this.dt
-    const i = Math.min(Math.max(Math.floor(position), 0), this.dernierPas)
+    const i = this.temps >= this.duree ? this.dernierPas : Math.min(Math.max(Math.floor(position), 0), this.dernierPas)
     const j = Math.min(i + 1, this.dernierPas)
     const fraction = position - i
     for (let n = 0; n < voitures.length; n++) {

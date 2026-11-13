@@ -13,11 +13,11 @@ const CHAMP_DE_REFERENCE = Math.tan(Math.PI / 6)
 const DEMI_DEGRE = Math.PI / 360
 
 export function lancerCourse(course: Course): void {
-  document.body.classList.add('en-course')
   const renderer = new WebGLRenderer({ antialias: true, powerPreference: 'high-performance' })
   renderer.setPixelRatio(Math.min(devicePixelRatio, PIXELS_MAX))
   renderer.setSize(innerWidth, innerHeight)
   document.body.prepend(renderer.domElement)
+  document.body.classList.add('en-course')
   const scene = new Scene()
   const camera = new PerspectiveCamera(60, innerWidth / innerHeight, 0.05, 20000)
 
@@ -78,7 +78,7 @@ export function lancerCourse(course: Course): void {
         realisateur.changerVue(sens)
         rafraichir()
         break
-      case 'Tab':
+      case 'KeyV':
         suivreVoiture(suivie + sens)
         break
       case 'Escape':

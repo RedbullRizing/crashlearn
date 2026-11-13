@@ -66,12 +66,19 @@ def test_conversion_plusieurs_voitures():
             map_name=np.str_("example"), team_names=np.array(["a", "b", "c"], dtype="U10"),
         )
         course = json.loads(json.dumps(vv.convertir(npz)))
-        Path(dossier, "factice.json").write_text("{}")
-        Path(dossier, vv.LISTE_DES_COURSES).write_text(json.dumps([{"nom": "supprimee"}, "ancien format"]))
+        Path(dossier, "factice.json").write_text("{}", encoding="utf-8")
+        Path(dossier, vv.LISTE_DES_COURSES).write_text(json.dumps([{"nom": "supprimee"}, "ancien format"]), encoding="utf-8")
         fiches = vv.mettre_a_jour_la_liste(Path(dossier), course)
         assert [f["nom"] for f in fiches] == ["factice"]
         assert fiches[0]["circuit"] == "example" and fiches[0]["pilotes"] == ["a", "b", "c"]
         assert fiches[0]["duree"] == 1.5 and len(fiches[0]["trace"]) >= 6
+    for reserve in ("courses", "entrainements"):
+        try:
+            vv.chemin_de_sortie(Path("recordings"), reserve)
+        except ValueError:
+            continue
+        raise AssertionError(f"{reserve} aurait écrasé une liste du visualiseur")
+    assert vv.chemin_de_sortie(Path("recordings"), "spa") == Path("recordings/spa.json")
     assert course["pas"] == pas and [v["nom"] for v in course["voitures"]] == ["a", "b", "c"]
     for voiture in course["voitures"]:
         assert len(voiture["poses"]) == 3 * pas and len(voiture["vitesse"]) == pas
@@ -86,11 +93,11 @@ def test_fiches_des_entrainements():
         for dossier, date in ((archives / "driver1-a-ppo", "2026-11-01T10:00:00"), (brouillon / "driver1-b-ppo", "2026-11-02T10:00:00")):
             (dossier / "sauvegardes").mkdir(parents=True)
             meta = {"pilote": "driver1", "algo": "ppo", "date": date, "circuits": ["Spa", "inconnu"], "config": config}
-            (dossier / "meta.json").write_text(json.dumps(meta))
-            (dossier / "bilan.json").write_text(json.dumps(bilan))
-        (archives / "driver1-a-ppo" / "note.md").write_text("# driver1-a-ppo\n\nPremier tour bouclé.\n")
+            (dossier / "meta.json").write_text(json.dumps(meta), encoding="utf-8")
+            (dossier / "bilan.json").write_text(json.dumps(bilan), encoding="utf-8")
+        (archives / "driver1-a-ppo" / "note.md").write_text("# driver1-a-ppo\n\nPremier tour bouclé.\n", encoding="utf-8")
         for pas in (200000, 100000):
-            (brouillon / "driver1-b-ppo" / "sauvegardes" / f"model_{pas}_steps.zip").write_text("")
+            (brouillon / "driver1-b-ppo" / "sauvegardes" / f"model_{pas}_steps.zip").write_text("", encoding="utf-8")
         (brouillon / "sans-meta").mkdir()
         donnees = json.loads(json.dumps(ev.exporter((("archive", archives), ("local", brouillon)))))
     recent, ancien = donnees["runs"]
