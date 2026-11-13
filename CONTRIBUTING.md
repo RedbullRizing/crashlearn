@@ -39,7 +39,13 @@ make record NAME=d2    CTRL=submission DRIVER=driver2    # un pilote précis
 make venv           # une fois, installe de quoi afficher
 make replay NAME=essai     # fenêtre interactive (Tk requis : make venv indique quoi installer)
 make video  NAME=essai     # ou export MP4
+make vue    NAME=essai     # ou en 3D : prépare recordings/essai.json…
+make visualiseur           # …et l'ouvre dans le navigateur (Bun et Node 22.18+)
 ```
+
+`make vue-runs` ajoute l'onglet Entraînements : pour chaque run de `runs/` et `archives/`, son bilan, ses courbes, sa configuration expliquée et ses circuits, avec comparaison de deux runs.
+
+Le visualiseur 3D rejoue 1 à 4 voitures. `C` change de vue (poursuite, embarquée, TV, hélico, libre), `Tab` ou `1`-`4` change de voiture suivie. Il relit des fichiers : il ne ralentit jamais un entraînement.
 
 `CTRL=submission` charge `submission/$(DRIVER)` et ne marche qu'avec `CARS=1` : un dossier pilote seul n'est pas recopié sur plusieurs voitures. `pure_pursuit` est la référence d'Epitech : il lit la pose exacte et la ligne centrale, à 2 m/s fixes — un repère, pas un pilote livrable.
 

@@ -1,0 +1,73 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Crash & Learn — visualiseur</title>
+  <link rel="icon" href="data:," />
+  <link rel="stylesheet" href="./style.css" />
+</head>
+<body>
+  <main id="accueil" class="page" hidden>
+    <header>
+      <p class="surtitre">Crash & Learn</p>
+      <h1 id="titre-accueil">Choisir une course</h1>
+      <p class="sous-titre" id="resume"></p>
+    </header>
+    <nav id="onglets" aria-label="Sections">
+      <a href="./" data-onglet="courses">Courses</a>
+      <a href="?onglet=entrainements" data-onglet="entrainements">Entraînements</a>
+    </nav>
+    <nav id="filtres" aria-label="Filtrer"></nav>
+    <p id="erreur" class="alerte" hidden></p>
+    <section id="cartes"></section>
+    <footer id="ajout-course">
+      <p>Ajouter une course :</p>
+      <code>make record NAME=spa CTRL=submission DRIVER=driver1 CIRCUIT=Spa</code>
+      <code>make vue NAME=spa</code>
+    </footer>
+    <footer id="ajout-run" hidden>
+      <p>Mettre à jour la liste après un entraînement :</p>
+      <code>make vue-runs</code>
+    </footer>
+  </main>
+
+  <main id="fiche" class="page" hidden></main>
+
+  <div id="hud" hidden>
+    <div id="course" class="panneau">
+      <a class="retour" href="./" title="Retour aux courses (Échap)">← Courses</a>
+      <div class="titre" id="titre"></div>
+      <div class="chrono chiffres" id="chrono">0:00.00</div>
+      <div class="info chiffres" id="infos"></div>
+    </div>
+
+    <div id="classement" class="panneau"></div>
+
+    <div id="telemetrie" class="panneau">
+      <div class="compteur"><span class="vitesse chiffres" id="vitesse">0.0</span><span class="unite">m/s</span></div>
+      <div class="mesure">
+        <div class="legende"><span>Braquage</span><span class="chiffres" id="braquage-texte"></span></div>
+        <div class="jauge centree"><div id="braquage"></div></div>
+      </div>
+      <div class="mesure">
+        <div class="legende"><span>Adhérence</span><span class="chiffres" id="adherence-texte"></span></div>
+        <div class="jauge"><div id="adherence"></div></div>
+      </div>
+    </div>
+
+    <div id="commandes" class="panneau">
+      <button id="lecture" class="icone" title="Lecture / pause (Espace)" aria-label="Lecture ou pause">⏸</button>
+      <span class="chiffres temps-courant" id="temps-courant">0:00</span>
+      <input id="temps" type="range" min="0" value="0" step="1" aria-label="Temps de la course" />
+      <span class="chiffres temps-total" id="temps-total"></span>
+      <div class="segments" id="cadence" role="group" aria-label="Vitesse de lecture"></div>
+      <div class="segments" id="vues" role="group" aria-label="Vue caméra (C)"></div>
+    </div>
+
+    <p id="aide">Espace lecture · ←/→ 1 s · C vue · Tab ou 1-4 voiture · Échap courses</p>
+  </div>
+
+  <script type="module" src="./src/main.ts"></script>
+</body>
+</html>
