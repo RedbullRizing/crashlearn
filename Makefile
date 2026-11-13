@@ -45,7 +45,7 @@ ENVS     ?=
 CIRCUITS ?=
 
 .DEFAULT_GOAL := help
-.PHONY: help sim-check sim-hash sim-manifest evaluer courses runs garder export build check test venv record replay video train board board-stop verify verify-gp grand-prix clean
+.PHONY: help sim-check sim-hash sim-manifest evaluer courses runs garder export build check test venv record replay video vue vue-runs visualiseur train board board-stop verify verify-gp grand-prix clean
 
 help:                    ## Affiche cette aide
 	@grep -E '^[a-z-]+:.*?## .*$$' $(MAKEFILE_LIST) \
@@ -89,6 +89,7 @@ test: sim-check          ## Lance les tests d'Epitech et ceux de training/
 	@docker compose run --rm sim python test_contract.py; a=$$?; \
 	 docker compose run --rm sim python test_integration.py; b=$$?; \
 	 docker compose run --rm sim python -m training.test_env; c=$$?; \
+	 docker compose run --rm sim python -m training.test_vers_visualiseur; d=$$?; \
 	 echo ""; echo "=================================================="; \
 	 if [ $$a -eq 0 ]; then echo "  test_contract     OK"; \
 	                   else echo "  test_contract     ECHEC"; fi; \
@@ -96,7 +97,9 @@ test: sim-check          ## Lance les tests d'Epitech et ceux de training/
 	                   else echo "  test_integration  ECHEC"; fi; \
 	 if [ $$c -eq 0 ]; then echo "  test_env          OK"; \
 	                   else echo "  test_env          ECHEC"; fi; \
-	 if [ $$a -ne 0 ] || [ $$b -ne 0 ] || [ $$c -ne 0 ]; then \
+	 if [ $$d -eq 0 ]; then echo "  test_visualiseur  OK"; \
+	                   else echo "  test_visualiseur  ECHEC"; fi; \
+	 if [ $$a -ne 0 ] || [ $$b -ne 0 ] || [ $$c -ne 0 ] || [ $$d -ne 0 ]; then \
 	   echo ""; \
 	   echo "  T08 (friction) echoue par conception : env_simulation.py fige"; \
 	   echo "  l'adherence et porte un TODO. La meteo viendra de notre env.py."; \
@@ -141,6 +144,15 @@ video:                   ## Exporte la course en MP4 -> recordings/<NAME>.mp4
 	$(DC) run --rm replay python viz_replay.py \
 		--npz /app/recordings/$(NAME).npz \
 		--record /app/recordings/$(NAME).mp4 --no-telemetry
+
+vue:                     ## Prépare une course pour le visualiseur 3D -> recordings/<NAME>.json
+	$(DC) run --rm sim python -m training.vers_visualiseur --nom $(NAME)
+
+vue-runs:                ## Prépare les fiches d'entraînement (runs/ et archives/) pour le visualiseur 3D
+	$(DC) run --rm sim python -m training.entrainements_vers_visualiseur
+
+visualiseur:             ## Ouvre le visualiseur 3D (Bun et Node 22.18+), puis choisir la course
+	cd visualiseur && bun install && bun run dev
 
 # --- entraîner -------------------------------------------------------------
 train:                   ## Entraîne un pilote d'après training/configs/<DRIVER>.yaml : make train DRIVER=driver2 [PAS=1000000 ENVS=8 GRAINE=7 CIRCUITS=example]

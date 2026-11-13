@@ -42,3 +42,7 @@ simulation/
 
 # Manifestes de comparaison du simulateur, locaux
 manifest-*.txt
+
+# Visualiseur 3D
+visualiseur/node_modules/
+visualiseur/dist/
