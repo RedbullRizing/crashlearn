@@ -30,7 +30,7 @@ class Agent:
         if info.get("step_count", 0) == 0:   # nouvelle course
             self.action_precedente = np.zeros(2, dtype=np.float32)
 
-        x = self.features["observation"](obs, self.action_precedente)
+        x = self.features["observation"](obs, info, self.action_precedente)
         action = self.model.run(None, {self.entree: x[None]})[0][0]
         self.action_precedente = np.clip(action, -1.0, 1.0).astype(np.float32)
 

@@ -1,0 +1,33 @@
+# Réglages d'entraînement du pilote champion : `make train DRIVER=champion`.
+#
+# Chacun fait diverger son pilote ici, sans toucher à env.py ni train.py. Une
+# option de la ligne de commande (PAS=, ENVS=, GRAINE=) l'emporte sur ce fichier.
+# La configuration effective de chaque run est recopiée dans son meta.json.
+#
+# Partie 3 : repart du meilleur pilote solo et s'entraîne contre les quatre
+# pilotes solo figés, de 0 à 3 au départ de chaque course.
+
+graine: 5
+pas: 1500000
+envs: 2              # quatre pilotes entraînés en même temps sur 8 cœurs
+eval_episodes: 2     # par circuit de validation : une course au sec, une sous la pluie
+depuis: ""         # run de départ dans runs/ (meilleur pilote solo)
+
+ppo:
+  n_steps: 1024      # × 2 envs = 2 048 pas par mise à jour
+  batch_size: 64
+  gamma: 0.99
+  learning_rate: 0.0003
+
+env:
+  pas_max: 3000      # troncature d'un épisode (150 s)
+  fin_sur_choc: true # un choc contre un mur termine l'épisode
+  meteo: true        # adhérence et bruit LiDAR tirés toutes les 20 s
+  adversaires: ["submission/driver1", "submission/driver2", "submission/driver3", "submission/driver4"]
+
+recompense:          # poids de la récompense par pas, voir training/env.py
+  cout_temps: 0.01
+  poids_douceur: 0.05
+  penalite_choc: 2.0
+  penalite_contact: 1.0
+  penalite_dnf: 10.0

@@ -1,14 +1,15 @@
-"""Vérifie le MDP v1 : `python -m training.test_env` dans le conteneur (`make test`)."""
+"""Vérifie le MDP v2 : `python -m training.test_env` dans le conteneur (`make test`)."""
 
 import os
 import tempfile
 from pathlib import Path
 
 import numpy as np
+import env_simulation as sim
 from gymnasium.utils.env_checker import check_env
 
 from training import config, features
-from training.env import RECOMPENSE_DEFAUT, CourseSolo, parametres_recompense
+from training.env import RECOMPENSE_DEFAUT, Course, parametres_recompense
 
 
 def test_secteurs_gauche_droite():
@@ -17,12 +18,12 @@ def test_secteurs_gauche_droite():
     lidar = np.full(100, 15.0, dtype=np.float32)
     lidar[60:77] = 0.5
     obs = {"lidar": lidar, "velocity": 0.0, "steering": 0.0}
-    secteurs = features.observation(obs, np.zeros(2, np.float32))[:18]
+    secteurs = features.observation(obs, {}, np.zeros(2, np.float32))[:18]
     assert secteurs[-1] < 0.5 and secteurs[0] == 1.0
 
 
 def test_commande_bornee():
-    assert features.commande(np.array([-5.0, -5.0])) == (0.0, -features.BRAQUAGE_MAX)
+    assert features.commande(np.array([-5.0, -5.0])) == (features.VITESSE_MIN, -features.BRAQUAGE_MAX)
     assert features.commande(np.array([1.0, 1.0])) == (features.VITESSE_MAX, features.BRAQUAGE_MAX)
 
 
@@ -32,13 +33,38 @@ def test_chargement_comme_agent():
     espace: dict = {}
     with open(os.path.join(os.path.dirname(features.__file__), "features.py")) as f:
         exec(f.read(), espace)
-    obs = {"lidar": np.linspace(0.1, 15, 100), "velocity": 3.0, "steering": 0.2}
+    obs = {"lidar": np.linspace(0.1, 15, 100), "velocity": 3.0, "steering": 0.2, "opponents": {
+        0: {"x_rel": 0.0, "y_rel": 0.0, "yaw_rel": 0.0, "speed": 0.0, "status": 0},
+        1: {"x_rel": 30.0, "y_rel": -1.0, "yaw_rel": 0.1, "speed": 5.0, "status": 1},
+        2: {"x_rel": 2.0, "y_rel": 0.5, "yaw_rel": -0.2, "speed": 4.0, "status": 1}}}
+    info = {"friction_current": 0.7}
     a = np.array([0.3, -0.7], np.float32)
-    assert np.array_equal(espace["observation"](obs, a), features.observation(obs, a))
+    x = features.observation(obs, info, a)
+    assert np.array_equal(espace["observation"](obs, info, a), x)
+    assert x.shape == (features.TAILLE_OBSERVATION,) and np.all(np.abs(x) <= 1.5)
+    # le plus proche d'abord, x écrêté à la portée, le troisième absent
+    adv = x[-15:].reshape(3, 5)
+    assert adv[0, 0] == 1 and np.isclose(adv[0, 1], 0.2) and adv[1, 1] == 1.0 and adv[2, 0] == 0
+
+
+def test_meteo():
+    # Sous la pluie, l'adhérence change dès le premier pas et se lit dans step_info.
+    Course._instances = 0     # le garde-fou vise deux environnements simultanés, pas ceux-ci
+    env = Course(circuits=("example",), pas_max=50)
+    frictions = set()
+    for graine in range(6):
+        env.reset(seed=graine, options={"circuit": "example", "meteo": True})
+        env.step(np.zeros(2, np.float32))
+        frictions.add(round(sim.get_step_info()["friction_current"], 3))
+    assert len(frictions) > 1 and all(0.5 <= f <= 1.0 for f in frictions), frictions
+    env.reset(seed=0, options={"circuit": "example", "meteo": False})
+    env.step(np.zeros(2, np.float32))
+    assert sim.get_step_info()["friction_current"] == 1.0
 
 
 def test_episodes():
-    env = CourseSolo(circuits=("example", "Montreal"), pas_max=300)
+    Course._instances = 0
+    env = Course(circuits=("example", "Montreal"), pas_max=300)
     check_env(env, skip_render_check=True)
 
     rng = np.random.default_rng(0)
@@ -55,9 +81,8 @@ def test_episodes():
 
 
 def test_recompense_par_defaut():
-    # Les poids du MDP v1 : sans surcharge, la récompense n'a pas changé.
-    assert parametres_recompense() == {
-        "cout_temps": 0.01, "poids_douceur": 0.05, "penalite_choc": 2.0, "penalite_dnf": 10.0}
+    assert parametres_recompense() == {"cout_temps": 0.01, "poids_douceur": 0.05, "penalite_choc": 2.0,
+                                       "penalite_contact": 1.0, "penalite_dnf": 10.0}
     assert parametres_recompense({"penalite_choc": 5.0}) == {**RECOMPENSE_DEFAUT, "penalite_choc": 5.0}
     try:
         parametres_recompense({"penalite_chocs": 5.0})      # faute de frappe
@@ -70,9 +95,9 @@ def test_recompense_par_defaut():
 def test_recompense_parametree():
     # Un poids surchargé change la récompense de son seul montant.
     def recompenses(poids):
-        CourseSolo._instances = 0     # le garde-fou vise deux environnements simultanés, pas ceux-ci
-        env = CourseSolo(circuits=("example",), pas_max=50, recompense=poids)
-        env.reset(seed=0, options={"circuit": "example"})
+        Course._instances = 0     # le garde-fou vise deux environnements simultanés, pas ceux-ci
+        env = Course(circuits=("example",), pas_max=50, recompense=poids)
+        env.reset(seed=0, options={"circuit": "example", "meteo": False})
         sortie = []
         for _ in range(5):
             _, r, termine, tronque, _ = env.step(np.zeros(2, np.float32))
@@ -117,16 +142,11 @@ def test_config_refuse_les_fautes():
 
 
 def test_configs_des_pilotes():
-    # Les quatre fichiers livrés se chargent et laissent le MDP v1 intact : seuls la
-    # graine (et le nombre d'environnements du run de référence) les distinguent.
-    graines = set()
-    for pilote in ("driver1", "driver2", "driver3", "driver4"):
+    # Les fichiers livrés se chargent, sans clé inconnue ; chacun est libre de ses réglages.
+    for pilote in ("driver1", "driver2", "driver3", "driver4", "champion"):
         cfg, fichier = config.charger(pilote)
         assert fichier is not None, pilote
-        assert parametres_recompense(cfg["recompense"]) == RECOMPENSE_DEFAUT, pilote
-        assert cfg["ppo"] == config.DEFAUTS["ppo"] and cfg["env"] == config.DEFAUTS["env"], pilote
-        graines.add(cfg["graine"])
-    assert len(graines) == 4, graines
+        parametres_recompense(cfg["recompense"])
 
 
 if __name__ == "__main__":
