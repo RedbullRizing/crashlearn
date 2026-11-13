@@ -58,6 +58,12 @@ make train DRIVER=driver1 PAS=1000000 ENVS=8 GRAINE=7   # une option l'emporte s
 make board
 ```
 
+Comparer des modèles : le bilan de fin d'entraînement ne joue que 6 courses, trop peu pour départager deux runs. `make evaluer` fait courir chaque modèle 12 fois sur les circuits de validation, avec les mêmes graines pour tous :
+
+```bash
+make evaluer RUN="driver1-20261113-131306-ppo driver1-20261114-101500-ppo"
+```
+
 **Faire diverger son pilote sans toucher au code partagé.** Chacun a son fichier `training/configs/<pilote>.yaml` : graine, nombre de pas et d'environnements, hyperparamètres PPO, poids de la récompense (`cout_temps`, `poids_douceur`, `penalite_choc`, `penalite_dnf`) et options de l'environnement. On ne modifie que le sien, et jamais `env.py` ni `train.py` pour régler un pilote. Le fichier lu et la configuration effective sont recopiés dans le `meta.json` du run ; une clé inconnue ou mal typée arrête l'entraînement avant son lancement. Ce qui change le contrat avec `agent.py` (observation, action, `features.py`) n'est pas configurable : cela se décide à l'équipe.
 
 ### 4. Suivre et garder ses runs
