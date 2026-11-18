@@ -1,0 +1,43 @@
+### prudent
+driver3-20261118-144100-ppo-c200k        finies  8/12 sec 4/6 pluie 4/6 chocs/course  22.1  meilleur tour Osche 45.8 Zandv 65.4 Mexic -
+driver3-20261118-144100-ppo              finies  7/12 sec 4/6 pluie 3/6 chocs/course  53.0  meilleur tour Osche 41.4 Zandv 60.5 Mexic -
+driver3-20261118-144347-ppo-c200k        finies  2/12 sec 0/6 pluie 2/6 chocs/course  84.3  meilleur tour Osche 41.3 Zandv 59.5 Mexic -
+driver3-20261118-144347-ppo              finies  7/12 sec 3/6 pluie 4/6 chocs/course  26.4  meilleur tour Osche 39.2 Zandv 57.2 Mexic 57.1
+driver3-20261118-144743-ppo-c200k        finies  6/12 sec 4/6 pluie 2/6 chocs/course  46.3  meilleur tour Osche 36.8 Zandv 53.1 Mexic 50.2
+driver3-20261118-144743-ppo              finies  8/12 sec 4/6 pluie 4/6 chocs/course  36.2  meilleur tour Osche 36.4 Zandv 52.5 Mexic 50.5
+### cout02
+driver3-20261118-145146-ppo-c200k        finies  5/12 sec 4/6 pluie 1/6 chocs/course  93.2  meilleur tour Osche 37.9 Zandv 55.0 Mexic -
+driver3-20261118-145146-ppo              finies  6/12 sec 4/6 pluie 2/6 chocs/course  75.8  meilleur tour Osche 36.5 Zandv 52.9 Mexic -
+driver3-20261118-145609-ppo-c200k        finies 10/12 sec 5/6 pluie 5/6 chocs/course  23.1  meilleur tour Osche 41.5 Zandv 59.8 Mexic 56.5
+driver3-20261118-145609-ppo              finies  8/12 sec 5/6 pluie 3/6 chocs/course  31.4  meilleur tour Osche 35.8 Zandv 51.2 Mexic 47.0
+driver3-20261118-150007-ppo-c200k        finies  8/12 sec 4/6 pluie 4/6 chocs/course  35.9  meilleur tour Osche 39.2 Zandv 58.8 Mexic 66.8
+driver3-20261118-150007-ppo              finies  7/12 sec 4/6 pluie 3/6 chocs/course   7.8  meilleur tour Osche 43.6 Zandv 64.6 Mexic 66.9
+### lr1e4
+driver3-20261118-150413-ppo-c200k        finies  1/12 sec 1/6 pluie 0/6 chocs/course 166.2  meilleur tour Osche 41.3 Zandv - Mexic -
+driver3-20261118-150413-ppo-c300k        finies  5/12 sec 4/6 pluie 1/6 chocs/course  88.9  meilleur tour Osche 47.4 Zandv 70.9 Mexic -
+driver3-20261118-150413-ppo-c400k        finies  4/12 sec 3/6 pluie 1/6 chocs/course  84.1  meilleur tour Osche 49.3 Zandv 72.7 Mexic -
+driver3-20261118-150413-ppo-c500k        finies  6/12 sec 4/6 pluie 2/6 chocs/course  72.7  meilleur tour Osche 47.2 Zandv 62.6 Mexic -
+driver3-20261118-150413-ppo              finies  6/12 sec 4/6 pluie 2/6 chocs/course  71.3  meilleur tour Osche 38.9 Zandv 58.2 Mexic -
+driver3-20261118-151251-ppo-c200k        finies  0/12 sec 0/6 pluie 0/6 chocs/course 152.3  meilleur tour Osche - Zandv - Mexic -
+driver3-20261118-151251-ppo-c300k        finies  0/12 sec 0/6 pluie 0/6 chocs/course 143.2  meilleur tour Osche 37.6 Zandv - Mexic -
+driver3-20261118-151251-ppo-c400k        finies  0/12 sec 0/6 pluie 0/6 chocs/course  84.4  meilleur tour Osche 39.8 Zandv - Mexic -
+driver3-20261118-151251-ppo-c500k        finies  0/12 sec 0/6 pluie 0/6 chocs/course  76.7  meilleur tour Osche 44.2 Zandv - Mexic -
+driver3-20261118-151251-ppo              finies  0/12 sec 0/6 pluie 0/6 chocs/course  67.5  meilleur tour Osche 42.8 Zandv - Mexic -
+driver3-20261118-152237-ppo-c200k        finies  0/12 sec 0/6 pluie 0/6 chocs/course 140.3  meilleur tour Osche - Zandv - Mexic -
+driver3-20261118-152237-ppo-c300k        finies  0/12 sec 0/6 pluie 0/6 chocs/course 147.4  meilleur tour Osche 38.5 Zandv - Mexic -
+driver3-20261118-152237-ppo-c400k        finies  0/12 sec 0/6 pluie 0/6 chocs/course 139.3  meilleur tour Osche - Zandv - Mexic -
+driver3-20261118-152237-ppo-c500k        finies  0/12 sec 0/6 pluie 0/6 chocs/course  73.7  meilleur tour Osche 53.5 Zandv - Mexic -
+driver3-20261118-152237-ppo              finies  0/12 sec 0/6 pluie 0/6 chocs/course  66.2  meilleur tour Osche 44.2 Zandv 66.8 Mexic -
+### lots512
+driver3-20261118-153216-ppo-c200k        finies  6/12 sec 4/6 pluie 2/6 chocs/course  77.4  meilleur tour Osche 44.6 Zandv 66.3 Mexic -
+driver3-20261118-153216-ppo-c300k        finies  7/12 sec 4/6 pluie 3/6 chocs/course  58.5  meilleur tour Osche 37.6 Zandv 56.0 Mexic -
+driver3-20261118-153216-ppo-c400k        finies  6/12 sec 4/6 pluie 2/6 chocs/course  59.6  meilleur tour Osche 36.4 Zandv 53.5 Mexic -
+driver3-20261118-153216-ppo              finies  7/12 sec 4/6 pluie 3/6 chocs/course  60.4  meilleur tour Osche 36.5 Zandv 53.9 Mexic -
+driver3-20261118-153925-ppo-c200k        finies  7/12 sec 4/6 pluie 3/6 chocs/course  70.6  meilleur tour Osche 38.9 Zandv 55.9 Mexic -
+driver3-20261118-153925-ppo-c300k        finies  6/12 sec 4/6 pluie 2/6 chocs/course  72.2  meilleur tour Osche 42.0 Zandv 59.8 Mexic -
+driver3-20261118-153925-ppo-c400k        finies  7/12 sec 6/6 pluie 1/6 chocs/course  56.1  meilleur tour Osche 36.8 Zandv 54.7 Mexic 50.9
+driver3-20261118-153925-ppo              finies  8/12 sec 6/6 pluie 2/6 chocs/course  45.2  meilleur tour Osche 35.6 Zandv 51.5 Mexic 47.2
+driver3-20261118-154351-ppo-c200k        finies  7/12 sec 4/6 pluie 3/6 chocs/course  61.2  meilleur tour Osche 43.0 Zandv 61.3 Mexic -
+driver3-20261118-154351-ppo-c300k        finies  9/12 sec 6/6 pluie 3/6 chocs/course  36.6  meilleur tour Osche 40.1 Zandv 57.7 Mexic 53.5
+driver3-20261118-154351-ppo-c400k        finies 11/12 sec 6/6 pluie 5/6 chocs/course  17.5  meilleur tour Osche 36.0 Zandv 52.1 Mexic 48.0
+driver3-20261118-154351-ppo              finies 10/12 sec 6/6 pluie 4/6 chocs/course  27.2  meilleur tour Osche 34.9 Zandv 50.1 Mexic 46.4

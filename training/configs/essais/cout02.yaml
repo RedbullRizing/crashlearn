@@ -1,0 +1,25 @@
+# Essai driver3 : coût du temps intermédiaire, 0,02.
+
+graine: 2
+pas: 300000
+envs: 8
+eval_episodes: 2
+
+ppo:
+  n_steps: 256
+  batch_size: 64
+  gamma: 0.99
+  learning_rate: 0.0003
+
+env:
+  pas_max: 3000
+  fin_sur_choc: true
+  meteo: true
+  adversaires: []
+
+recompense:
+  cout_temps: 0.02
+  poids_douceur: 0.05
+  penalite_choc: 2.0
+  penalite_contact: 1.0
+  penalite_dnf: 10.0
