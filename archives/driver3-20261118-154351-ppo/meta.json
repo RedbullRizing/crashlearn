@@ -1,0 +1,91 @@
+{
+  "nom": "driver3-20261118-154351-ppo",
+  "pilote": "driver3",
+  "algo": "ppo",
+  "graine": 3,
+  "circuits": [
+    "Austin",
+    "BrandsHatch",
+    "Catalunya",
+    "Hockenheim",
+    "IMS",
+    "Melbourne",
+    "Montreal",
+    "Monza",
+    "MoscowRaceway",
+    "Nuerburgring",
+    "Sakhir",
+    "SaoPaulo",
+    "Sepang",
+    "Shanghai",
+    "Silverstone",
+    "Spielberg",
+    "YasMarina"
+  ],
+  "date": "2026-11-18T15:43:52",
+  "git": {
+    "commit": "8ed9074",
+    "modifie": true
+  },
+  "versions": {
+    "python": "3.11.14",
+    "numpy": "2.4.6",
+    "torch": "2.13.0+cpu",
+    "gymnasium": "1.4.0",
+    "stable_baselines3": "2.9.2",
+    "onnx": "1.22.0",
+    "onnxruntime": "1.29.0"
+  },
+  "commande": "/app/training/train.py --pilote driver3 --config training/configs/essais/lots512.yaml --graine 3",
+  "config": {
+    "graine": 3,
+    "pas": 500000,
+    "envs": 8,
+    "eval_episodes": 2,
+    "depuis": "",
+    "ppo": {
+      "n_steps": 512,
+      "batch_size": 128,
+      "gamma": 0.99,
+      "learning_rate": 0.0003
+    },
+    "env": {
+      "pas_max": 3000,
+      "fin_sur_choc": true,
+      "meteo": true,
+      "adversaires": []
+    },
+    "recompense": {
+      "cout_temps": 0.03,
+      "poids_douceur": 0.05,
+      "penalite_choc": 2.0,
+      "penalite_contact": 1.0,
+      "penalite_dnf": 10.0
+    },
+    "fichier": "training/configs/essais/lots512.yaml",
+    "circuits": [
+      "Austin",
+      "BrandsHatch",
+      "Catalunya",
+      "Hockenheim",
+      "IMS",
+      "Melbourne",
+      "Montreal",
+      "Monza",
+      "MoscowRaceway",
+      "Nuerburgring",
+      "Sakhir",
+      "SaoPaulo",
+      "Sepang",
+      "Shanghai",
+      "Silverstone",
+      "Spielberg",
+      "YasMarina"
+    ],
+    "circuits_eval": [
+      "Oschersleben",
+      "Zandvoort",
+      "MexicoCity"
+    ]
+  }
+}
