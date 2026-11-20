@@ -1,0 +1,32 @@
+name: Miroir Epitech
+on:
+  push:
+  delete:
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: miroir-epitech
+  cancel-in-progress: false
+jobs:
+  miroir:
+    if: github.repository == 'RedbullRizing/crashlearn'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - name: Copier toutes les branches et tags vers Epitech
+        env:
+          SOURCE_URL: https://github.com/RedbullRizing/crashlearn.git
+          TARGET_URL: https://github.com/EpitechMscProPromo2027/T-AIA-901-LYN-9-1-crashlearn-11.git
+          GH_TOKEN: ${{ github.token }}
+          EPITECH_MIRROR_TOKEN: ${{ secrets.EPITECH_MIRROR_TOKEN }}
+          GIT_TERMINAL_PROMPT: "0"
+          GIT_CONFIG_COUNT: "1"
+          GIT_CONFIG_KEY_0: credential.helper
+          GIT_CONFIG_VALUE_0: '!f() { printf "%s\n" "username=x-access-token" "password=$GH_TOKEN"; }; f'
+        run: |
+          : "${EPITECH_MIRROR_TOKEN:?Définir le secret EPITECH_MIRROR_TOKEN du dépôt.}"
+          mirror="$RUNNER_TEMP/epitech.git"
+          git clone --bare "$SOURCE_URL" "$mirror"
+          GH_TOKEN="$EPITECH_MIRROR_TOKEN" git -C "$mirror" push --atomic --prune "$TARGET_URL" \
+            '+refs/heads/*:refs/heads/*' '+refs/tags/*:refs/tags/*'
