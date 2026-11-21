@@ -4,10 +4,11 @@
 # option de la ligne de commande (PAS=, ENVS=, GRAINE=) l'emporte sur ce fichier.
 # La configuration effective de chaque run est recopiée dans son meta.json.
 #
-# Prudent : un choc contre un mur coûte 5 au lieu de 2.
+# Pilote livré : PPO 64x64, 20 passes par mise à jour (n_epochs), choc à 10,
+# un choc ne coupe pas l'épisode. Run driver2-20261121-214154-ppo.
 
-graine: 7
-pas: 500000         # 300 000 pas finissaient déjà 6 courses de validation sur 6
+graine: 2            # choisie sur la série d'essais (graines 7 et 2)
+pas: 400000          # le modèle à 400 000 pas finit 12/12 courses de validation
 envs: 8              # un pilote à la fois, un environnement par cœur
 eval_episodes: 2     # par circuit de validation : une course au sec, une sous la pluie
 
@@ -17,10 +18,11 @@ ppo:
   gamma: 0.995
   learning_rate: 0.0003
   ent_coef: 0.005
+  n_epochs: 20
 
 env:
   pas_max: 3000      # troncature d'un épisode (150 s)
-  fin_sur_choc: false # un choc contre un mur termine l'épisode
+  fin_sur_choc: false # entraînement seulement : false = un choc ne coupe pas l'épisode (en course, un choc n'élimine jamais)
   meteo: true        # adhérence et bruit LiDAR tirés toutes les 20 s
   adversaires: []
 
