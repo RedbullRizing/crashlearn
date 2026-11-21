@@ -1,0 +1,32 @@
+# Réglages d'entraînement du pilote driver2 : `make train DRIVER=driver2`.
+#
+# Chacun fait diverger son pilote ici, sans toucher à env.py ni train.py. Une
+# option de la ligne de commande (PAS=, ENVS=, GRAINE=) l'emporte sur ce fichier.
+# La configuration effective de chaque run est recopiée dans son meta.json.
+#
+# Prudent : un choc contre un mur coûte 5 au lieu de 2.
+
+graine: 7
+pas: 500000         # 300 000 pas finissaient déjà 6 courses de validation sur 6
+envs: 8              # un pilote à la fois, un environnement par cœur
+eval_episodes: 2     # par circuit de validation : une course au sec, une sous la pluie
+
+ppo:
+  n_steps: 256       # × 8 envs = 2 048 pas par mise à jour
+  batch_size: 64
+  gamma: 0.995
+  learning_rate: 0.0003
+  ent_coef: 0.005
+
+env:
+  pas_max: 3000      # troncature d'un épisode (150 s)
+  fin_sur_choc: false # un choc contre un mur termine l'épisode
+  meteo: true        # adhérence et bruit LiDAR tirés toutes les 20 s
+  adversaires: []
+
+recompense:          # poids de la récompense par pas, voir training/env.py
+  cout_temps: 0.01
+  poids_douceur: 0.05
+  penalite_choc: 12.0
+  penalite_contact: 1.0
+  penalite_dnf: 10.0
