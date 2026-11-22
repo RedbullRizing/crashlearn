@@ -40,6 +40,8 @@ EPISODES ?= 5
 CIRCUIT  ?= example
 # Pour make train, PAS, ENVS et GRAINE ne comptent que s'ils sont donnés : sinon
 # c'est training/configs/$(DRIVER).yaml qui décide (défaut : 200 000 pas, graine 42).
+# CONFIG remplace ce fichier par un autre (un essai rangé dans training/configs/essais/).
+CONFIG   ?=
 PAS      ?=
 ENVS     ?=
 CIRCUITS ?=
@@ -155,10 +157,11 @@ visualiseur:             ## Ouvre le visualiseur 3D (Bun et Node 22.18+), puis c
 	cd visualiseur && bun install && bun run dev
 
 # --- entraîner -------------------------------------------------------------
-train:                   ## Entraîne un pilote d'après training/configs/<DRIVER>.yaml : make train DRIVER=driver2 [PAS=1000000 ENVS=8 GRAINE=7 CIRCUITS=example]
+train:                   ## Entraîne un pilote d'après training/configs/<DRIVER>.yaml : make train DRIVER=driver2 [CONFIG=training/configs/essais/x.yaml PAS=1000000 ENVS=8 GRAINE=7 CIRCUITS=example]
 	@test -f training/train.py || { \
 	  echo "  training/train.py introuvable."; exit 1; }
 	$(DC_RUN) sim python -m training.train --pilote $(DRIVER) \
+		$(if $(CONFIG),--config $(CONFIG)) \
 		$(if $(PAS),--pas $(PAS)) $(if $(ENVS),--envs $(ENVS)) \
 		$(if $(filter command line,$(origin GRAINE)),--graine $(GRAINE)) \
 		$(if $(CIRCUITS),--circuits $(CIRCUITS))
