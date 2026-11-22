@@ -140,6 +140,28 @@ def test_configs_des_pilotes():
         parametres_recompense(cfg["recompense"])
 
 
+def test_export_remplace_les_poids():
+    import onnxruntime
+    import torch
+    from stable_baselines3 import PPO
+    from training.exporter import Politique, exporter
+
+    Course._instances = 0
+    model = PPO("MlpPolicy", Course(circuits=("example",)), seed=0, device="cpu")
+    with tempfile.TemporaryDirectory() as dossier:
+        dossier = Path(dossier)
+        tailles = []
+        for _ in range(2):
+            exporter(model, dossier)
+            tailles.append((dossier / "model.onnx.data").stat().st_size)
+        assert tailles[0] == tailles[1], f"model.onnx.data grossit à chaque export : {tailles}"
+        lot = np.random.default_rng(0).uniform(-1, 1, (8, model.observation_space.shape[0])).astype(np.float32)
+        obtenu = onnxruntime.InferenceSession(str(dossier / "model.onnx")).run(None, {"obs": lot})[0]
+        with torch.no_grad():
+            attendu = Politique(model.policy).eval()(torch.from_numpy(lot)).numpy()
+        assert np.abs(attendu - obtenu).max() < 1e-4
+
+
 if __name__ == "__main__":
     for nom, fonction in list(globals().items()):
         if nom.startswith("test_"):
