@@ -55,6 +55,7 @@ Entraîner et suivre les courbes sur <http://localhost:6006> :
 make courses DRIVER=driver1 CIRCUIT=Spa EPISODES=5   # banc d'évaluation, écrit dans runs/
 make train DRIVER=driver1                            # réglages de training/configs/driver1.yaml
 make train DRIVER=driver1 PAS=1000000 ENVS=8 GRAINE=7   # une option l'emporte sur le fichier
+make train DRIVER=driver1 CONFIG=training/configs/essais/<essai>.yaml   # un autre fichier de réglages, pour un essai
 make board
 ```
 

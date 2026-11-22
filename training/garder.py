@@ -55,7 +55,7 @@ def main() -> int:
 
     meta = {}
     try:
-        meta = json.loads((source / "meta.json").read_text())
+        meta = json.loads((source / "meta.json").read_text(encoding="utf-8"))
     except (OSError, json.JSONDecodeError):
         print("  [attention] pas de meta.json lisible : run impossible à rattacher à son code.")
     if meta.get("git", {}).get("modifie"):
@@ -77,7 +77,8 @@ def main() -> int:
     (cible / "note.md").write_text(
         f"# {args.run}\n\n{note}\n\n"
         f"Archivé le {datetime.now():%Y-%m-%d %H:%M}, "
-        f"commit du run : {meta.get('git', {}).get('commit', 'inconnu')}.\n"
+        f"commit du run : {meta.get('git', {}).get('commit', 'inconnu')}.\n",
+        encoding="utf-8",
     )
 
     ignores = sum(1 for f in source.rglob("*") if f.is_file() and f.suffix in EXCLUS)
