@@ -57,6 +57,9 @@ def exporter(model: PPO, dossier: Path) -> None:
     torch.onnx.export(Politique(model.policy).eval(), entree, chemin, opset_version=OPSET,
                       input_names=["obs"], output_names=["action"],
                       dynamic_axes={"obs": {0: "n"}, "action": {0: "n"}}, dynamo=False)
+    # onnx ajoute à la fin d'un .onnx.data existant : on repart d'un fichier vide.
+    # Pas avant torch.onnx.export, qui écrit model.onnx avec les poids intégrés.
+    (dossier / "model.onnx.data").unlink(missing_ok=True)
     onnx.save_model(onnx.load(chemin), chemin, save_as_external_data=True,
                     all_tensors_to_one_file=True, location="model.onnx.data", size_threshold=0)
     for nom in ("agent.py", "features.py"):
