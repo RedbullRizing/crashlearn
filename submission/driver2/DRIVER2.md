@@ -70,7 +70,7 @@ Fichier `training/configs/driver2.yaml`. En gras, ce qui diffère de driver1.
 | `meteo` | oui | pluie aléatoire pendant l'entraînement |
 | `adversaires` | aucun | entraîné seul sur la piste |
 
-Le fichier est identique à la configuration enregistrée dans le `meta.json` du run livré. Mais relancer `make train DRIVER=driver2` ne redonne pas le même modèle au bit près : les 8 simulateurs en parallèle rendent l'entraînement non déterministe. On obtient un pilote du même niveau, pas le même (voir la section 7).
+Le fichier est identique à la configuration enregistrée dans le `meta.json` du run livré. L'entraînement est reproductible au bit près : relancer `make train DRIVER=driver2` redonne le même modèle (voir la section 7).
 
 ---
 
@@ -146,7 +146,7 @@ On mesure aussi les sauvegardes à 300k et 400k : le dernier modèle n'est pas t
 | 21/11 | `185118` | série : **`n_epochs` 20**, graine 2, sauvegarde 400k | 12/12 | **45** | 0 | 45,9 / 65,5 / 59,1 s |
 | 21/11 | `184119` | série : `n_epochs` 20, graine 7 | 6/12 | — | 0,1 | 46,8 / 65,9 / — |
 | 21/11 | `195132` | série : `clip_range` 0,1, graine 2 | 12/12 | 43 | 0 | 55,0 / 79,5 / 72,2 s |
-| 21/11 | **`214154`** | **`n_epochs` 20, graine 2, 400k, réentraîné : modèle livré** | **12/12** | **43** | **0,2** | **46,1 / 65,9 / 59,4 s** |
+| 21/11 | **`214154`** | **`n_epochs` 20, graine 2, réentraîné, modèle final (401 408 pas) : modèle livré** | **12/12** | **43** | **0,2** | **46,1 / 65,9 / 59,4 s** |
 
 En gras : les réglages gardés. « Livré » : le modèle a été le pilote driver2 jusqu'à la livraison suivante. Tous les runs sont archivés dans `archives/` avec une note.
 
@@ -156,7 +156,7 @@ En gras : les réglages gardés. « Livré » : le modèle a été le pilote dri
 - **Un choc doit coûter cher.** À −5, il tape les murs ; à −10, il ne les touche presque plus. −7, −8 et −12 font moins bien.
 - **Anticiper plus loin rend la conduite propre.** Avec gamma 0,995, il freine avant le virage au lieu de taper le mur : 0,2 choc par course.
 - **Un peu de hasard évite le piège de l'immobilité.** Sans `ent_coef`, une graine sur trois apprend à rester sur place : rester immobile coûte environ 12, un peu plus qu'un choc. Avec `ent_coef` 0,005, toutes les graines roulent.
-- **Étudier chaque lot 20 fois au lieu de 10 (`n_epochs` 20) est le meilleur levier trouvé** : 45/46 au mieux, 43/46 une fois réentraîné.
+- **Étudier chaque lot 20 fois au lieu de 10 (`n_epochs` 20) est le meilleur levier trouvé** : 45/46 pour la sauvegarde 400k, 43/46 pour le modèle final livré, qui a une mise à jour PPO de plus.
 - **Vitesse et pluie s'opposent.** Toutes les versions rapides (1M pas, coût du temps plus fort, affinage) perdent des courses sous la pluie.
 - **Le hasard pèse lourd.** La même configuration donne 45/46 avec la graine 2 et 6/12 avec la graine 7. Il faut toujours essayer deux graines.
 
@@ -184,7 +184,7 @@ Les virages sont mesurés sur la ligne centrale de chaque circuit (`simulation/m
 3. **Le piège de l'immobilité.** Un pilote qui reste sur place est éliminé au bout de 10 s et perd environ 12 (abandon 10, temps 2) : c'est moins qu'un essai qui finit dans un mur après plusieurs chocs à −10. Certains entraînements apprennent donc à ne plus bouger. D4 (learning rate 0,0002, `100238`) est immobile dès 350k pas. La configuration de `165157`, avec la graine 2 au lieu de 7 (`112230`), ne roule jamais : 0/12. `ent_coef` 0,005, qui garde un peu de hasard dans les gestes, l'évite. Une pénalité d'immobilité dans le code commun le réglerait à la source.
 4. **Des circuits de validation trop faciles.** Mesuré sur les lignes centrales des circuits, Oschersleben n'a aucun virage de rayon inférieur à 2 m et Zandvoort un seul, contre 3 à Shanghai et 11 à YasMarina. MexicoCity, avec 7 virages serrés, est le seul exigeant des trois. Conséquence : le pilote du 20/11 faisait 11/12 en validation, mais seulement 17/34 sur les 17 circuits d'entraînement. D'où le deuxième banc de mesure (section 6).
 5. **Le bug d'export.** `make export` ajoute les nouveaux poids à la fin de `submission/driver2/model.onnx.data` au lieu de remplacer le fichier : après 5 exports, il faisait 135 Ko au lieu de 27 Ko. Le pilote marche, mais le livrable est pollué. Contournement : supprimer le fichier avant chaque export (voir « Reproduire »). La correction tient en une ligne dans `training/exporter.py`, code commun.
-6. **L'entraînement n'est pas reproductible au bit près.** Les 8 simulateurs en parallèle le rendent non déterministe. Réentraînée avec la même graine et le même commit, la configuration livrée donne 43/46 au lieu de 45/46. Le hasard pèse aussi entre graines : 45/46 avec la graine 2, 6/12 avec la graine 7. Il faut donc juger une configuration sur plusieurs graines, et `driver2.yaml` redonne un pilote du même niveau, pas le même modèle.
+6. **L'entraînement est reproductible au bit près, mais le modèle final n'est pas la sauvegarde 400k.** Réentraînée avec la même graine, la configuration livrée redonne exactement les mêmes poids à chaque sauvegarde : c'est vérifié sur trois runs avec la graine 2 (le run livré, l'essai `n_epochs` 20 de la première série et le run à 600k de la deuxième). Une mise à jour PPO porte sur 2 048 pas (`n_steps` 256 × 8 simulateurs). Un run à `pas: 400000` s'arrête donc à 401 408 pas, et son modèle final a une mise à jour PPO de plus que la sauvegarde 400k. Cette seule mise à jour sépare les 45/46 de la sauvegarde 400k et les 43/46 du modèle final livré. D'où la règle : évaluer les sauvegardes, pas seulement le modèle final. Le hasard pèse en revanche entre graines : 45/46 avec la graine 2, 6/12 avec la graine 7. Il faut donc juger une configuration sur plusieurs graines.
 
 ---
 
@@ -206,7 +206,7 @@ Les virages sont mesurés sur la ligne centrale de chaque circuit (`simulation/m
 ## Reproduire
 
 ```
-make train DRIVER=driver2                                  # entraîner (même niveau, pas le même modèle)
+make train DRIVER=driver2                                  # entraîner (redonne le même modèle au bit près)
 rm submission/driver2/model.onnx.data                      # sinon l'export s'ajoute à l'ancien fichier
 make export RUN=driver2-20261121-214154-ppo DRIVER=driver2  # livrer un run
 make verify DRIVER=driver2                                 # vérifier la livraison
