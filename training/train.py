@@ -33,6 +33,7 @@ from stable_baselines3.common.logger import configure
 from stable_baselines3.common.vec_env import SubprocVecEnv
 
 import env_simulation as sim
+from training import features
 from training.config import charger
 from training.env import ENTRAINEMENT, VALIDATION, Course, parametres_recompense
 from training.metrics import SuiviCourse, agreger
@@ -40,11 +41,13 @@ from training.runs import RACINE_RUNS, Run
 
 
 def evaluer(model: PPO, circuits: list[str], episodes: int, graine: int,
-            adversaires: list[str] = ()) -> list[dict]:
+            adversaires: list[str] = (), friction_min: float = features.FRICTION_PLUIE) -> list[dict]:
     """Courses complètes sur chaque circuit, politique déterministe, sans fin sur
     choc : la vraie règle du tournoi. Mêmes graines pour toutes les politiques.
-    Une course sur deux sous la pluie ; avec des adversaires, tous au départ."""
-    env = Course(circuits=circuits, fin_sur_choc=False, pas_max=6000, adversaires=adversaires)
+    Une course sur deux sous la pluie ; avec des adversaires, tous au départ.
+    `friction_min` : adhérence la plus basse sous la pluie (0,5 par défaut, MDP v2)."""
+    env = Course(circuits=circuits, fin_sur_choc=False, pas_max=6000, adversaires=adversaires,
+                 friction_min=friction_min)
     resultats = []
     for circuit, n in [(c, n) for c in circuits for n in range(episodes)]:
         meteo = n % 2 == 1
