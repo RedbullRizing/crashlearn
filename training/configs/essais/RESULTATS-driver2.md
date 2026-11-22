@@ -103,7 +103,7 @@ Environ 75 modèles ont été mesurés : le meilleur peut avoir eu de la chance 
 - **Vitesse et pluie s'opposent.** Les versions rapides (1M pas, coût du temps, affinage, `gae_lambda` 0,90) perdent toutes des courses sous la pluie. Le réseau 128 × 128 ne résout pas ce dilemme : la limite vient plutôt de ce que perçoit le pilote (LiDAR à l'avant seulement, pas de mémoire) et de la récompense.
 - **Le hasard pèse lourd**, entre graines d'entraînement (45/46 contre 6/12) comme entre graines de course (45 contre 41). Peu de conclusions fermes sans deux graines de chaque.
 - **Les 3 circuits de validation sont trop flatteurs** : 11/12 en validation, mais 17/34 sur les 17 autres circuits pour le pilote du 20/11.
-- **Point faible commun à tous les modèles : Shanghai**, jamais fini (ligne droite de 110 m puis virage de rayon 0,84 m).
+- **Point faible commun à tous les modèles : Shanghai**, jamais fini : la plus longue ligne droite du jeu (110 m) débouche sur un virage de rayon compris entre 0,7 et 1,1 m selon le lissage, le plus serré du jeu dans tous les cas (rayon de courbure mesuré sur la ligne centrale `simulation/maps/<circuit>/<circuit>_centerline.csv` ; méthode dans la section 7 de `submission/driver2/DRIVER2.md`).
 
 ## Pilote livré
 
