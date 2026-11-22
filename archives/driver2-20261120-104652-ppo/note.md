@@ -2,4 +2,4 @@
 
 Choc 5, graine 13, 500k : 6/12.
 
-Archivé le 2026-11-20 16:04, commit du run : 3f7b68a.
+ArchivÃ© le 2026-11-20 16:04, commit du run : 3f7b68a.
