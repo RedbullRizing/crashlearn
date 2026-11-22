@@ -56,6 +56,43 @@ def test_meteo():
     assert sim.get_step_info()["friction_current"] == 1.0
 
 
+def test_friction_min():
+    Course._instances = 0
+    env = Course(circuits=("example",), pas_max=50, friction_min=0.7)
+    frictions = set()
+    for graine in range(6):
+        env.reset(seed=graine, options={"circuit": "example", "meteo": True})
+        env.step(np.zeros(2, np.float32))
+        frictions.add(round(sim.get_step_info()["friction_current"], 3))
+    assert len(frictions) > 1 and all(0.7 <= f <= 1.0 for f in frictions), frictions
+    for hors_plage in (0.3, 1.2):
+        try:
+            Course(friction_min=hors_plage)
+        except ValueError:
+            continue
+        raise AssertionError(f"friction_min {hors_plage} doit être refusée")
+
+
+def test_penalite_immobilite():
+    def recompenses(poids, vitesse):
+        Course._instances = 0
+        env = Course(circuits=("example",), pas_max=50, recompense=poids)
+        env.reset(seed=0, options={"circuit": "example", "meteo": False})
+        sortie = []
+        for _ in range(5):
+            _, r, termine, tronque, _ = env.step(np.array([vitesse, 0.0], np.float32))
+            assert not (termine or tronque)
+            sortie.append(r)
+        return np.array(sortie)
+
+    arret = -2 / 3                               # consigne de vitesse 0 m/s
+    assert np.allclose(recompenses(None, arret) - recompenses({"penalite_immobilite": 0.5}, arret), 0.5)
+    roule = recompenses(None, 1.0) - recompenses({"penalite_immobilite": 0.5}, 1.0)
+    assert roule[-1] == 0.0, roule               # lancée, la voiture n'est plus pénalisée
+    assert parametres_recompense({"penalite_immobilite": 0.03}) == {**RECOMPENSE_DEFAUT,
+                                                                    "penalite_immobilite": 0.03}
+
+
 def test_episodes():
     Course._instances = 0
     env = Course(circuits=("example", "Montreal"), pas_max=300)

@@ -50,9 +50,13 @@ BRUIT_SEC, BRUIT_PLUIE = sim._LIDAR_NOISE, 0.1
 
 
 def _changer_temps(s) -> None:
-    """Nouveau temps : une adhérence et un bruit LiDAR liés, de sec à forte pluie."""
+    """Nouveau temps : une adhérence et un bruit LiDAR liés, de sec à forte pluie.
+
+    L'adhérence descend jusqu'à `s.friction_min` (option `friction_min` de Course,
+    0,5 par défaut comme en v2) ; le bruit LiDAR, lui, ne dépend que de `pluie`."""
     pluie = float(s._rng.uniform()) ** 2 if s._rng.uniform() < 0.7 else 0.0
-    s._friction = features.FRICTION_SEC - pluie * (features.FRICTION_SEC - features.FRICTION_PLUIE)
+    friction_min = getattr(s, "friction_min", features.FRICTION_PLUIE)
+    s._friction = features.FRICTION_SEC - pluie * (features.FRICTION_SEC - friction_min)
     s._bruit = BRUIT_SEC + pluie * (BRUIT_PLUIE - BRUIT_SEC)
     s._pluie = pluie
     p = dict(sim._PARAMS)
@@ -91,16 +95,26 @@ RECOMPENSE_DEFAUT = {
     "penalite_dnf": 10.0,
 }
 
+# Poids facultatifs, nuls par défaut (essai v3, CRA-105). Ils restent hors de
+# RECOMPENSE_DEFAUT : sans réglage, les poids d'un run sont ceux du MDP v2, à la
+# clé près, dans son meta.json comme dans les tests.
+RECOMPENSE_FACULTATIVE = {
+    "penalite_immobilite": 0.0,   # par pas où la voiture roule à moins de SEUIL_IMMOBILITE
+}
+SEUIL_IMMOBILITE = 0.3            # m/s
+
 
 def parametres_recompense(surcharges: dict | None = None) -> dict:
-    """Poids de la récompense : ceux du MDP v2, surchargés clé par clé.
+    """Poids de la récompense : ceux du MDP v2, surchargés clé par clé, plus les
+    poids facultatifs (`RECOMPENSE_FACULTATIVE`) quand ils sont donnés.
 
     Une clé inconnue est une faute de frappe dans un fichier de configuration :
     elle lèverait sinon aucune erreur, et le run partirait avec le poids par défaut."""
-    inconnues = set(surcharges or {}) - set(RECOMPENSE_DEFAUT)
+    connues = set(RECOMPENSE_DEFAUT) | set(RECOMPENSE_FACULTATIVE)
+    inconnues = set(surcharges or {}) - connues
     if inconnues:
         raise ValueError(f"poids de récompense inconnus : {sorted(inconnues)} "
-                         f"(attendus : {sorted(RECOMPENSE_DEFAUT)})")
+                         f"(attendus : {sorted(connues)})")
     return {**RECOMPENSE_DEFAUT, **(surcharges or {})}
 
 
@@ -116,6 +130,9 @@ class Course(gym.Env):
     les `EPISODES_PAR_CIRCUIT` épisodes, sauf si `reset(options={"circuit": ...})`
     l'impose (évaluation).
 
+    `friction_min` : adhérence la plus basse sous la pluie, entre 0,5 (défaut, MDP v2)
+    et 1,0. L'entrée « pluie » de l'observation garde son échelle (`features.FRICTION_PLUIE`).
+
     `adversaires` : dossiers pilotes (`submission/driverN`). À chaque épisode,
     de 0 à `len(adversaires)` d'entre eux prennent le départ, et la voiture qui
     apprend tire sa place sur la grille."""
@@ -124,7 +141,11 @@ class Course(gym.Env):
 
     def __init__(self, circuits: list[str] | tuple[str, ...] = ("example",),
                  pas_max: int = 3000, fin_sur_choc: bool = True, meteo: bool = True,
-                 adversaires: list[str] | tuple[str, ...] = (), recompense: dict | None = None):
+                 adversaires: list[str] | tuple[str, ...] = (), recompense: dict | None = None,
+                 friction_min: float = features.FRICTION_PLUIE):
+        if not features.FRICTION_PLUIE <= friction_min <= features.FRICTION_SEC:
+            raise ValueError(f"friction_min doit être entre {features.FRICTION_PLUIE} et "
+                             f"{features.FRICTION_SEC}, pas {friction_min!r}")
         Course._instances += 1
         if Course._instances > 1:
             raise RuntimeError("un seul Course par processus : utiliser SubprocVecEnv")
@@ -134,6 +155,7 @@ class Course(gym.Env):
         self.recompense = parametres_recompense(recompense)
         self.fin_sur_choc = fin_sur_choc
         self.meteo = meteo
+        self.friction_min = float(friction_min)
         self._episodes = 0
         self._adversaires = []
         if adversaires:
@@ -165,6 +187,7 @@ class Course(gym.Env):
 
         sim.reset(num_cars=voitures, seed=int(self.np_random.integers(2**31)))
         sim._get_sim().meteo = options.get("meteo", self.meteo)
+        sim._get_sim().friction_min = self.friction_min
 
         self._longueur = sim._get_sim()._total_arc
         self._pas = 0
@@ -205,7 +228,11 @@ class Course(gym.Env):
 
         self._action_precedente = action
         if statut == ACTIF:
-            self._obs = features.observation(sim.get_obs(ego), info, action)
+            obs_ego = sim.get_obs(ego)
+            immobilite = poids.get("penalite_immobilite", 0.0)
+            if immobilite and abs(obs_ego["velocity"]) < SEUIL_IMMOBILITE:
+                recompense -= immobilite
+            self._obs = features.observation(obs_ego, info, action)
 
         return self._obs, float(recompense), terminated, truncated, {
             "statut": statut,

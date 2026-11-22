@@ -31,7 +31,8 @@ DEFAUTS = {
 }
 
 _ENTIERS = ("graine", "pas", "envs", "eval_episodes")
-_CLES_ENV = {"pas_max", "fin_sur_choc", "meteo", "adversaires"}
+# friction_min est facultative, absente de DEFAUTS : Course la met à 0,5 (MDP v2).
+_CLES_ENV = {"pas_max", "fin_sur_choc", "meteo", "adversaires", "friction_min"}
 
 
 def _lire(chemin: Path) -> dict:
