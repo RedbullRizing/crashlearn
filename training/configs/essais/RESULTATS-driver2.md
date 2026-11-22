@@ -86,10 +86,45 @@ Environ 75 modèles ont été mesurés : le meilleur peut avoir eu de la chance 
 |---|---|---|---|
 | E3, graine 7 (livré avant) | 39 | 37 | 175,3 / 177,4 s |
 | `n_epochs` 20, graine 2, 400k (série) | 45 | 41 | 174,7 / 177,6 s |
-| **`n_epochs` 20, graine 2, 400k, réentraîné (livré)** | **43** | **41** | **175,4 / 177,7 s** |
+| **`n_epochs` 20, graine 2, final (401 408 pas), réentraîné (livré)** | **43** | **41** | **175,4 / 177,7 s** |
 | `clip_range` 0,1, graine 2, final | 43 | 41 | 208,5 / 209,4 s |
 
-2. **Reproductibilité.** La même configuration, réentraînée (graine 2, 400 000 pas, même commit), ne donne pas le même modèle au bit près : les 8 simulateurs en parallèle rendent l'entraînement non déterministe. Le niveau est le même (12/12 en validation, 43/46 et 41/46). C'est la configuration qui est bonne, pas un seul tirage.
+2. **Reproductibilité.** La même configuration, réentraînée (graine 2, même commit), redonne exactement les mêmes poids à chaque sauvegarde (vérifié dans la 2e série). Le modèle final du run livré (43/46) diffère de la sauvegarde 400k (45/46) d'une seule mise à jour PPO : l'entraînement s'arrête à 401 408 pas.
+
+## 2e série automatique du 22/11 (15 runs, base : pilote livré)
+
+Même méthode que la première série, autour du pilote livré (`driver2.yaml`, `n_epochs` 20). D'abord la configuration livrée telle quelle avec trois autres graines (13, 21, 42), puis six variantes d'un seul réglage, chacune avec les graines 2 et 13. Meilleur modèle parmi 300k et final (run à 600k : 300k, 400k, 500k et final). Les 17 circuits sont mesurés pour les modèles à 12/12, ou à 11/12 plus rapides que le livré ; tout modèle à 42/46 ou plus repasse les 46 courses avec la graine de course 30000.
+
+**Configuration livrée, selon la graine d'entraînement :**
+
+| Graine | Meilleur modèle | Validation | Total /46 | Tours O / Z / M (s) |
+|---|---|---|---|---|
+| **2 (livré)** | final | 12/12 | **43** (graine 30000 : 41) | 46,1 / 65,9 / 59,4 |
+| 13 | final | 12/12 | 35 (pluie 7/17) | 40,1 / 58,8 / 54,0 |
+| 21 | final | 10/12 | — | 57,2 / 84,2 / 79,9 |
+| 42 | 300k | 12/12 | 38 | 48,1 / 70,5 / 65,0 |
+
+**Variantes :**
+
+| Config | Fichier (`essais/`) | Graine 2 | Graine 13 | Lecture |
+|---|---|---|---|---|
+| `n_epochs` 15 | `driver2-s2-epochs15.yaml` | 11/12 (300k) | 0/12 (immobile) | à écarter |
+| `n_epochs` 30 | `driver2-s2-epochs30.yaml` | 12/12, 38/46 | 11/12, 37/46 (8 chocs par course) | rapide, faible sous la pluie |
+| `clip_range` 0,1 | `driver2-s2-clip01.yaml` | 0/12 (immobile) | 12/12, **44/46**, graine 30000 : **43/46** (50,4 / 73,7 / 66,9) | le plus sûr, 9 à 13 % plus lent, une graine sur deux |
+| `batch_size` 128 | `driver2-s2-batch128.yaml` | 11/12, 37/46 (300k ; pluie 9/17) | 0/12 (immobile) | à écarter |
+| douceur 0,1 | `driver2-s2-douceur01.yaml` | 10/12 (300k) | 9/12 | à écarter |
+| 600k pas | `driver2-s2-600k.yaml` | 400k : 12/12, **45/46**, graine 30000 : 41/46 (45,9 / 65,5 / 59,1) ; final : 9/12 | 500k : 12/12, 39/46 ; final : 32/46 | meilleur à 400k–500k, se dégrade ensuite |
+
+Runs (graine 2, graine 13) : livré graine 13 `091615`, graine 21 `092617`, graine 42 `093447` ; epochs15 `094610`, `095403` ; epochs30 `100209`, `101258` ; clip01 `102618`, `103712` ; batch128 `105205`, `110105` ; douceur01 `110910`, `111804` ; 600k `112732`, `114617` (préfixe `driver2-20261122-`).
+
+**Conclusions :**
+
+- **La configuration livrée est fragile selon la graine.** Graine 2 : 43/46. Les graines 13, 21 et 42 donnent au mieux 35/46, 10/12 et 38/46. Le pilote livré est un bon tirage, pas une configuration sûre.
+- **3 runs sur 12 restent immobiles** (`n_epochs` 15 graine 13, `clip_range` 0,1 graine 2, `batch_size` 128 graine 13) : 0/12 à toutes les sauvegardes, malgré `ent_coef` 0,005. Le piège de l'immobilité n'est pas réglé par les réglages de PPO ; une pénalité d'immobilité (code commun) reste à proposer.
+- **S'entraîner plus longtemps n'aide pas.** Au-delà de 500k pas, les deux graines vont plus vite mais tapent les murs (8 à 12 chocs par course) et perdent la pluie.
+- **`clip_range` 0,1 confirme la première série** : meilleur total avec la graine de course 30000 (43/46), mais 9 à 13 % plus lent, et immobile avec la graine 2.
+- **L'entraînement est reproductible au bit près.** Les sauvegardes 100k à 400k du run livré, de l'essai `n_epochs` 20 de la première série et du run à 600k (graine 2) ont exactement les mêmes poids. Le 45/46 de la sauvegarde 400k et le 43/46 du modèle final du run livré ne viennent pas du hasard : avec 2 048 pas par mise à jour, l'entraînement s'arrête à 401 408 pas, et le modèle final a une mise à jour PPO de plus que la sauvegarde 400k.
+- **Pilote livré conservé.** Aucune variante ne le bat avec les deux graines de course à la même vitesse : le 45/46 ne fait que 41/46 avec la graine 30000, comme le livré, et le 44/46 de `clip_range` 0,1 est 13 % plus lent.
 
 ## Lectures
 
