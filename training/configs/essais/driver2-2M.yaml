@@ -1,4 +1,6 @@
-# Réglages d'entraînement du pilote driver2 : `make train DRIVER=driver2`.
+# Réglages d'entraînement du pilote driver2, essai. Pour entraîner avec ce fichier :
+#   docker compose run --rm -e GIT_SHA=$(git rev-parse --short HEAD) -e GIT_DIRTY=$(test -n "$(git status --porcelain)" && echo 1 || echo 0) sim python -m training.train --pilote driver2 --config training/configs/essais/driver2-2M.yaml
+#   (ou make train DRIVER=driver2 CONFIG=training/configs/essais/driver2-2M.yaml une fois la PR #27 fusionnée)
 #
 # Chacun fait diverger son pilote ici, sans toucher à env.py ni train.py. Une
 # option de la ligne de commande (PAS=, ENVS=, GRAINE=) l'emporte sur ce fichier.

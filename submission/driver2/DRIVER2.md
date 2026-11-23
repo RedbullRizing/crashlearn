@@ -148,7 +148,7 @@ On mesure aussi les sauvegardes à 300k et 400k : le dernier modèle n'est pas t
 | 21/11 | `195132` | série : `clip_range` 0,1, graine 2 | 12/12 | 43 | 0 | 55,0 / 79,5 / 72,2 s |
 | 21/11 | **`214154`** | **`n_epochs` 20, graine 2, réentraîné, modèle final (401 408 pas) : modèle livré** | **12/12** | **43** | **0,2** | **46,1 / 65,9 / 59,4 s** |
 
-En gras : les réglages gardés. « Livré » : le modèle a été le pilote driver2 jusqu'à la livraison suivante. Tous les runs sont archivés dans `archives/` avec une note.
+En gras : les réglages gardés. « Livré » : le modèle a été le pilote driver2 jusqu'à la livraison suivante. Tous les runs sont archivés dans `archives/` avec une note. Les chiffres de ce tableau et des notes (`note.md`) viennent de `make evaluer` (12 courses de validation) et, quand elles ont été jouées, des 46 courses. Le `bilan.json` de chaque archive est l'évaluation automatique de fin d'entraînement : 6 courses seulement (une au sec et une sous la pluie sur chacun des 3 circuits de validation, `eval_episodes: 2` ; 12 pour l'essai 2M pas), avec la graine de course `graine` + 10 000. Elle ne sert pas au choix.
 
 **Ce qu'on en retient**
 
@@ -220,9 +220,10 @@ Les virages sont mesurés sur la ligne centrale de chaque circuit (`simulation/m
 ## Reproduire
 
 ```
-make train DRIVER=driver2                                  # entraîner (redonne le même modèle au bit près)
+make train DRIVER=driver2                                  # entraîner (redonne le même modèle au bit près) ; affiche le run créé dans runs/
 rm submission/driver2/model.onnx.data                      # sinon l'export s'ajoute à l'ancien fichier
-make export RUN=driver2-20261121-214154-ppo DRIVER=driver2  # livrer un run
+make export RUN=<run créé par make train> DRIVER=driver2   # livrer un run : il doit exister dans runs/ (non versionné) ;
+                                                           # le run livré est driver2-20261121-214154-ppo
 make verify DRIVER=driver2                                 # vérifier la livraison
 make evaluer RUN="<run1> <run2>"                           # comparer sur 12 courses
 ```
