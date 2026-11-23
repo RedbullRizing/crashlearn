@@ -173,6 +173,17 @@ Pour vérifier que le pilote livré n'a pas seulement eu de la chance sur ces 46
 
 Il finit 4 courses de plus que le pilote précédent avec chaque graine, à la même vitesse.
 
+### Conditions de la pédagogie (FU2)
+
+La pédagogie annonce pour le tournoi une adhérence de 0,7 à 1,0 sous la pluie. Le pilote s'entraîne, et a été mesuré jusqu'ici, avec une adhérence de 0,5 à 1,0 (section 4). Rejoué sur les mêmes 46 courses avec une adhérence de 0,7 à 1,0, il finit **42/46** et **43/46** :
+
+| Modèle, adhérence 0,7–1,0 | Validation | 17 circuits (sec / pluie) | Total /46 | Course moyenne en validation |
+|---|---|---|---|---|
+| **`214154` (livré), graine 20000** | **12/12** | **30/34 (16 / 14)** | **42** | **174,5 s** |
+| **`214154`, graine 30000** | **12/12** | **31/34 (16 / 15)** | **43** | **176,4 s** |
+
+C'est le même niveau que sous 0,5 (43 et 41) : entraîné sur la plage la plus large, il couvre celle du tournoi. L'essai v3 (CRA-105) a aussi testé l'inverse : entraîner sous 0,7 à 1,0, une pénalité d'immobilité, ou les deux. Aucun n'a amélioré les arrivées, sur quatre graines d'entraînement. Le détail est dans `training/configs/essais/RESULTATS-v3.md`, sur la branche de CRA-105.
+
 ---
 
 ## 7. Ce sur quoi il a du mal
@@ -181,25 +192,28 @@ Les virages sont mesurés sur la ligne centrale de chaque circuit (`simulation/m
 
 1. **Shanghai.** Aucun modèle ne l'a fini, ni au sec ni sous la pluie. La plus longue ligne droite du jeu (110 m) y débouche sur un virage de rayon compris entre 0,7 et 1,1 m selon le lissage, le plus serré du jeu dans tous les cas. C'est de l'ordre du rayon de braquage minimal de la voiture, environ 0,74 m : le pilote arrive vite et doit tourner presque en butée.
 2. **Vitesse ou pluie.** Toutes les versions plus rapides perdent des courses sous la pluie. `131748` (1M pas) tourne en 37,8 s à Oschersleben contre 46,1 s, mais finit 8 courses de moins sur 46. Un réseau plus grand (2 × 128) ne change rien : la limite vient plutôt de ce que le pilote perçoit (LiDAR à l'avant seulement, aucune mémoire) et de l'adhérence sous forte pluie (0,5). Le classement se fait à l'arrivée, donc on a choisi de finir. Le pilote livré abandonne encore sous la pluie à YasMarina (graine de course 20000), et à Montreal, Monza et MoscowRaceway (graine 30000).
-3. **Le piège de l'immobilité.** Un pilote qui reste sur place est éliminé au bout de 10 s et perd environ 12 (abandon 10, temps 2) : c'est moins qu'un essai qui finit dans un mur après plusieurs chocs à −10. Certains entraînements apprennent donc à ne plus bouger. D4 (learning rate 0,0002, `100238`) est immobile dès 350k pas. La configuration de `165157`, avec la graine 2 au lieu de 7 (`112230`), ne roule jamais : 0/12. `ent_coef` 0,005, qui garde un peu de hasard dans les gestes, le réduit sans le supprimer : 4 runs sur 43 sont restés immobiles malgré lui (voir la section 6). Une pénalité d'immobilité dans le code commun le réglerait à la source.
+3. **Le piège de l'immobilité.** Un pilote qui reste sur place est éliminé au bout de 10 s et perd environ 12 (abandon 10, temps 2) : c'est moins qu'un essai qui finit dans un mur après plusieurs chocs à −10. Certains entraînements apprennent donc à ne plus bouger. D4 (learning rate 0,0002, `100238`) est immobile dès 350k pas. La configuration de `165157`, avec la graine 2 au lieu de 7 (`112230`), ne roule jamais : 0/12. `ent_coef` 0,005, qui garde un peu de hasard dans les gestes, le réduit sans le supprimer : 4 runs sur 43 sont restés immobiles malgré lui (voir la section 6). Une pénalité d'immobilité (0,03 sous 0,3 m/s) a été testée dans l'essai v3 (CRA-105) : elle ne règle pas le piège, une graine sur quatre échoue encore.
 4. **Des circuits de validation trop faciles.** Mesuré sur les lignes centrales des circuits, Oschersleben n'a aucun virage de rayon inférieur à 2 m et Zandvoort un seul, contre 3 à Shanghai et 11 à YasMarina. MexicoCity, avec 7 virages serrés, est le seul exigeant des trois. Conséquence : le pilote du 20/11 faisait 11/12 en validation, mais seulement 17/34 sur les 17 circuits d'entraînement. D'où le deuxième banc de mesure (section 6).
-5. **Le bug d'export.** `make export` ajoute les nouveaux poids à la fin de `submission/driver2/model.onnx.data` au lieu de remplacer le fichier : après 5 exports, il faisait 135 Ko au lieu de 27 Ko. Le pilote marche, mais le livrable est pollué. Contournement : supprimer le fichier avant chaque export (voir « Reproduire »). La correction tient en une ligne dans `training/exporter.py`, code commun.
+5. **Le bug d'export.** `make export` ajoute les nouveaux poids à la fin de `submission/driver2/model.onnx.data` au lieu de remplacer le fichier : après 5 exports, il faisait 135 Ko au lieu de 27 Ko. Le pilote marche, mais le livrable est pollué. Contournement : supprimer le fichier avant chaque export (voir « Reproduire »). La correction tient en une ligne dans `training/exporter.py`, code commun : proposée dans la PR #26 (CRA-103), en relecture.
 6. **L'entraînement est reproductible au bit près, mais le modèle final n'est pas la sauvegarde 400k.** Réentraînée avec la même graine, la configuration livrée redonne exactement les mêmes poids à chaque sauvegarde : c'est vérifié sur trois runs avec la graine 2 (le run livré, l'essai `n_epochs` 20 de la première série et le run à 600k de la deuxième). Une mise à jour PPO porte sur 2 048 pas (`n_steps` 256 × 8 simulateurs). Un run à `pas: 400000` s'arrête donc à 401 408 pas, et son modèle final a une mise à jour PPO de plus que la sauvegarde 400k. Cette seule mise à jour sépare les 45/46 de la sauvegarde 400k et les 43/46 du modèle final livré. D'où la règle : évaluer les sauvegardes, pas seulement le modèle final. Le hasard pèse en revanche entre graines : 45/46 avec la graine 2, 6/12 avec la graine 7. Il faut donc juger une configuration sur plusieurs graines.
 
 ---
 
 ## 8. Prochaines étapes
 
-- **Une 2e série d'essais autour de `n_epochs` 20**, un réglage à la fois, mesurée sur les deux bancs et avec deux graines de course :
-  - d'abord la robustesse : la configuration livrée avec les graines d'entraînement 13, 21 et 42 ;
-  - puis `n_epochs` 15 et 30, `clip_range` 0,1, `batch_size` 128, douceur 0,1 et 600 000 pas.
-- **Des propositions de code commun à soumettre à l'équipe**, chacune en PR séparée :
-  - une adhérence sous la pluie de 0,7 à 1,0 au lieu de 0,5, demandée par la pédagogie (`FRICTION_PLUIE` dans `features.py`) ; tous les pilotes devront être réentraînés ;
-  - la correction du bug d'export dans `exporter.py` ;
-  - une pénalité d'immobilité ;
-  - un LiDAR à 360° et une mémoire (plusieurs images LiDAR empilées) ;
-  - l'écriture des notes en UTF-8 dans `garder.py` ;
-  - `CONFIG=` dans `make train`, et l'intégration de `courses_detail.py` dans `training/`.
+- **Fait :**
+  - la 2e série d'essais autour de `n_epochs` 20 : le résultat dépend fortement de la graine d'entraînement (voir `training/configs/essais/RESULTATS-driver2.md`) ;
+  - l'adhérence de 0,7 à 1,0 annoncée par la pédagogie est évaluée sans réentraîner : le pilote livré fait 42/46 et 43/46. Réentraîner à 0,7 fait passer la meilleure graine (2) de 42 à 26 (essai v3, CRA-105).
+- **Code commun :**
+  - le bug d'export (`exporter.py`) : correctif proposé, PR #26 (CRA-103) en relecture ;
+  - `CONFIG=` dans `make train` et les notes en UTF-8 dans `garder.py` : correctif proposé, PR #27 (CRA-104) en relecture ;
+  - pénalité d'immobilité : testée dans l'essai v3 (CRA-105, branche séparée non fusionnée), résultat non concluant ; driver2 ne l'utilise pas ;
+  - à proposer : un LiDAR à 360° et une mémoire (plusieurs images LiDAR empilées) ;
+  - à proposer : l'intégration de `courses_detail.py` dans `training/`.
+- **Pistes restantes :**
+  - plusieurs graines d'entraînement par configuration, pour ne plus juger sur un bon tirage ;
+  - un autre découpage des circuits de validation, trop faciles aujourd'hui (section 7) ;
+  - une stratégie face aux adversaires.
 
 ---
 
