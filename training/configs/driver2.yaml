@@ -4,16 +4,17 @@
 # option de la ligne de commande (PAS=, ENVS=, GRAINE=) l'emporte sur ce fichier.
 # La configuration effective de chaque run est recopiée dans son meta.json.
 #
-# Pilote livré : PPO 64x64, 20 passes par mise à jour (n_epochs), choc à 10,
-# un choc ne coupe pas l'épisode. Run driver2-20261121-214154-ppo.
+# Pilote livré : PPO 64x64, 4 096 pas par mise à jour (n_steps 512), 20 passes par
+# mise à jour (n_epochs), choc à 10, un choc ne coupe pas l'épisode.
+# Run driver2-20261123-194118-ppo, série 4 (CRA-106).
 
-graine: 2            # choisie sur la série d'essais (graines 7 et 2)
-pas: 400000          # le modèle à 400 000 pas finit 12/12 courses de validation
+graine: 2            # graine 2, retenue dans la série 4 : la config la plus régulière sur 6 graines (CRA-106)
+pas: 600000          # 147 mises à jour de 4 096 pas : le run s'arrête à 602 112 pas (série 4, CRA-106)
 envs: 8              # un pilote à la fois, un environnement par cœur
 eval_episodes: 2     # par circuit de validation : une course au sec, une sous la pluie
 
 ppo:
-  n_steps: 256       # × 8 envs = 2 048 pas par mise à jour
+  n_steps: 512       # × 8 envs = 4 096 pas par mise à jour
   batch_size: 64
   gamma: 0.995
   learning_rate: 0.0003
