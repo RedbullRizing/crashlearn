@@ -1,0 +1,36 @@
+# Réglages d'entraînement du pilote driver2, essai. Pour entraîner avec ce fichier :
+#   docker compose run --rm -e GIT_SHA=$(git rev-parse --short HEAD) -e GIT_DIRTY=$(test -n "$(git status --porcelain)" && echo 1 || echo 0) sim python -m training.train --pilote driver2 --config training/configs/essais/driver2-s5-nsteps1024.yaml
+#   (ou make train DRIVER=driver2 CONFIG=training/configs/essais/driver2-s5-nsteps1024.yaml une fois la PR #27 fusionnée)
+#
+# Chacun fait diverger son pilote ici, sans toucher à env.py ni train.py. Une
+# option de la ligne de commande (PAS=, ENVS=, GRAINE=) l'emporte sur ce fichier.
+# La configuration effective de chaque run est recopiée dans son meta.json.
+#
+# Pilote livré : PPO 64x64, 20 passes par mise à jour (n_epochs), choc à 10,
+# un choc ne coupe pas l'épisode. Run driver2-20261121-214154-ppo.
+
+graine: 2            # choisie sur la série d'essais (graines 7 et 2)
+pas: 800000          # série 5 : 600 000 au pilote livré (B) ; 98 mises à jour de 8 192 pas, arrêt à 802 816 pas
+envs: 8              # un pilote à la fois, un environnement par cœur
+eval_episodes: 2     # par circuit de validation : une course au sec, une sous la pluie
+
+ppo:
+  n_steps: 1024      # série 5 : × 8 envs = 8 192 pas par mise à jour (512 au pilote livré B)
+  batch_size: 64
+  gamma: 0.995
+  learning_rate: 0.0003
+  ent_coef: 0.005
+  n_epochs: 20
+
+env:
+  pas_max: 3000      # troncature d'un épisode (150 s)
+  fin_sur_choc: false # entraînement seulement : false = un choc ne coupe pas l'épisode (en course, un choc n'élimine jamais)
+  meteo: true        # adhérence et bruit LiDAR tirés toutes les 20 s
+  adversaires: []
+
+recompense:          # poids de la récompense par pas, voir training/env.py
+  cout_temps: 0.01
+  poids_douceur: 0.05
+  penalite_choc: 10.0
+  penalite_contact: 1.0
+  penalite_dnf: 10.0
