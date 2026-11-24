@@ -1,0 +1,5 @@
+# driver2-20261123-194118-ppo
+
+Série 4 driver2, robustesse aux graines (CRA-106). Config : nsteps512 (essais/driver2-s4-nsteps512.yaml : livrée + n_steps 512, 600k pas), graine 2. Chiffres : runs/courses_detail.py, adhérence 0,7 et 0,5, graine de course 20000 (30000 si rejoué), total sur 46 = 12 courses de validation + 34 sur les 17 circuits ; le bilan.json est l'évaluation de fin d'entraînement (6 courses), qui ne sert pas au choix. 400k : adhérence 0,7 12/12, 40/46, adhérence 0,5 12/12, 38/46, tours sous 0,7 55,6 / 80,0 / 72,8 s ; 500k : adhérence 0,7 8/12 (17 circuits non mesurés), adhérence 0,5 8/12 (17 circuits non mesurés), tours sous 0,7 48,6 / 70,0 / 68,3 s ; final : adhérence 0,7 12/12, 44/46 (graine 30000 : 44/46), adhérence 0,5 11/12, 43/46 (graine 30000 : 44/46), tours sous 0,7 47,1 / 67,9 / 62,6 s. Retenu comme pilote driver2 (CRA-106). Confirmation sous 0,7 avec 4 graines de course (20000, 30000, 40000, 50000) : 44, 44, 45 et 46/46, moyenne 44,75.
+
+Archivé le 2026-11-24 18:59, commit du run : f036318.
