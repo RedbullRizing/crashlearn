@@ -1,0 +1,35 @@
+﻿circuit;meteo;resultat;tours;total_s;chocs
+Austin;sec;arrivée;68.0 67.2 67.5;202.6;0
+Austin;pluie;arrivée;69.1 70.1 68.8;207.9;0
+BrandsHatch;sec;arrivée;53.0 52.3 52.5;157.8;0
+BrandsHatch;pluie;arrivée;53.5 54.7 52.9;161.1;0
+Catalunya;sec;arrivée;63.7 63.4 63.5;190.6;0
+Catalunya;pluie;arrivée;64.0 65.5 63.6;193.2;0
+Hockenheim;sec;arrivée;57.0 56.3 56.5;169.9;0
+Hockenheim;pluie;arrivée;57.3 58.5 57.0;172.8;0
+IMS;sec;arrivée;46.0 45.5 45.5;136.9;0
+IMS;pluie;arrivée;45.9 47.4 45.8;139.1;0
+Melbourne;sec;arrivée;72.2 71.8 72.0;215.9;0
+Melbourne;pluie;arrivée;72.8 74.0 74.5;221.2;0
+Montreal;sec;arrivée;51.9 50.9 51.4;154.2;3
+Montreal;pluie;stagnation;52.4;;137
+Monza;sec;arrivée;71.0 70.2 69.8;211.1;0
+Monza;pluie;arrivée;71.5 74.7 71.6;217.8;0
+MoscowRaceway;sec;arrivée;52.1 51.4 51.2;154.8;0
+MoscowRaceway;pluie;arrivée;52.2 54.1 52.5;158.9;0
+Nuerburgring;sec;arrivée;68.8 68.3 68.5;205.6;0
+Nuerburgring;pluie;arrivée;69.7 70.8 69.8;210.3;0
+Sakhir;sec;arrivée;68.6 68.5 68.0;205.2;0
+Sakhir;pluie;arrivée;69.3 70.6 69.8;209.6;0
+SaoPaulo;sec;arrivée;54.2 53.8 53.8;161.8;0
+SaoPaulo;pluie;arrivée;54.6 56.0 53.9;164.4;0
+Sepang;sec;arrivée;74.1 73.9 73.8;221.8;0
+Sepang;pluie;arrivée;75.2 76.3 76.0;227.5;0
+Shanghai;sec;arrivée;75.0 74.8 74.2;224.1;0
+Shanghai;pluie;arrivée;75.8 77.3 76.8;229.9;0
+Silverstone;sec;arrivée;73.2 72.2 72.2;217.5;0
+Silverstone;pluie;arrivée;73.4 74.3 74.3;222.1;0
+Spielberg;sec;arrivée;53.6 52.9 52.8;159.2;0
+Spielberg;pluie;arrivée;53.8 54.5 53.4;161.7;0
+YasMarina;sec;arrivée;66.2 65.0 65.2;196.4;0
+YasMarina;pluie;arrivée;67.3 68.2 66.0;201.5;3

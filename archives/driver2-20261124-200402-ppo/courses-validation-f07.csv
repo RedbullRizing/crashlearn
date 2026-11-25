@@ -1,0 +1,13 @@
+﻿circuit;meteo;resultat;tours;total_s;chocs
+MexicoCity;sec;arrivée;70.4 69.2 69.8;209.3;0
+MexicoCity;pluie;arrivée;80.9 91.8 78.3;250.9;0
+MexicoCity;sec;arrivée;70.3 69.5 70.1;209.9;0
+MexicoCity;pluie;stagnation;74.1 73.3;;1
+Oschersleben;sec;arrivée;52.4 52.4 52.1;156.8;0
+Oschersleben;pluie;arrivée;58.5 58.0 61.2;177.8;8
+Oschersleben;sec;arrivée;52.2 52.2 52.3;156.8;0
+Oschersleben;pluie;stagnation;52.4 55.8;;17
+Zandvoort;sec;arrivée;73.7 74.0 73.4;221.1;0
+Zandvoort;pluie;stagnation;;;115
+Zandvoort;sec;arrivée;74.0 73.4 74.0;221.5;0
+Zandvoort;pluie;arrivée;74.2 78.5 92.2;245.0;0
