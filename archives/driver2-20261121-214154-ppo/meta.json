@@ -1,0 +1,93 @@
+{
+  "nom": "driver2-20261121-214154-ppo",
+  "pilote": "driver2",
+  "algo": "ppo",
+  "graine": 2,
+  "circuits": [
+    "Austin",
+    "BrandsHatch",
+    "Catalunya",
+    "Hockenheim",
+    "IMS",
+    "Melbourne",
+    "Montreal",
+    "Monza",
+    "MoscowRaceway",
+    "Nuerburgring",
+    "Sakhir",
+    "SaoPaulo",
+    "Sepang",
+    "Shanghai",
+    "Silverstone",
+    "Spielberg",
+    "YasMarina"
+  ],
+  "date": "2026-11-21T21:41:55",
+  "git": {
+    "commit": "9f9f174",
+    "modifie": false
+  },
+  "versions": {
+    "python": "3.11.18",
+    "numpy": "2.4.6",
+    "torch": "2.13.0+cpu",
+    "gymnasium": "1.4.0",
+    "stable_baselines3": "2.9.2",
+    "onnx": "1.22.0",
+    "onnxruntime": "1.29.0"
+  },
+  "commande": "/app/training/train.py --pilote driver2 --config training/configs/essais/driver2-epochs20.yaml --graine 2 --pas 400000",
+  "config": {
+    "graine": 2,
+    "pas": 400000,
+    "envs": 8,
+    "eval_episodes": 2,
+    "depuis": "",
+    "ppo": {
+      "n_steps": 256,
+      "batch_size": 64,
+      "gamma": 0.995,
+      "learning_rate": 0.0003,
+      "ent_coef": 0.005,
+      "n_epochs": 20
+    },
+    "env": {
+      "pas_max": 3000,
+      "fin_sur_choc": false,
+      "meteo": true,
+      "adversaires": []
+    },
+    "recompense": {
+      "cout_temps": 0.01,
+      "poids_douceur": 0.05,
+      "penalite_choc": 10.0,
+      "penalite_contact": 1.0,
+      "penalite_dnf": 10.0
+    },
+    "fichier": "training/configs/essais/driver2-epochs20.yaml",
+    "circuits": [
+      "Austin",
+      "BrandsHatch",
+      "Catalunya",
+      "Hockenheim",
+      "IMS",
+      "Melbourne",
+      "Montreal",
+      "Monza",
+      "MoscowRaceway",
+      "Nuerburgring",
+      "Sakhir",
+      "SaoPaulo",
+      "Sepang",
+      "Shanghai",
+      "Silverstone",
+      "Spielberg",
+      "YasMarina"
+    ],
+    "circuits_eval": [
+      "Oschersleben",
+      "Zandvoort",
+      "MexicoCity"
+    ]
+  }
+}

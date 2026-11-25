@@ -1,0 +1,12 @@
+{
+  "course/taux_completion": 0.5,
+  "course/taux_abandon": 0.5,
+  "course/tours_moyens": 2.0,
+  "course/progression_max_moyenne": 2.3097036554510355,
+  "chocs/mur_par_voiture": 22.666666666666668,
+  "chocs/voiture_par_voiture": 0.0,
+  "tour/temps_moyen": 44.62916666666667,
+  "tour/meilleur": 34.6,
+  "abandon/stagnation": 0.5,
+  "abandon/sortie_de_piste": 0.0
+}
