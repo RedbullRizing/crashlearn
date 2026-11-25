@@ -188,6 +188,16 @@ C'est la règle du tournoi qui fait préférer les arrivées à la vitesse : une
 
 Il touche en revanche plus les murs : 2,94 chocs par course contre 0,33. Presque tous viennent de 4 abandons où il reste collé à un mur sous la pluie, à Montréal et à Monza (section 7) ; sur ses courses finies, il fait 0,51 choc par course, contre 0,32 pour `194118`. Les chocs ne comptent pas dans le classement, mais ces abandons ne tombent pas au hasard. `194118` reste donc archivé comme solution de repli (`archives/driver2-20261124-180912-ppo`, configuration au commit `f607576`) : il finit Montréal et Monza sous la pluie avec les 4 graines de course.
 
+Les archives ne gardent jamais les poids (`CONTRIBUTING.md`) : pour revenir à ce pilote, on le réentraîne depuis le commit `f607576`, sur une branche dédiée. Le réentraînement redonne des poids identiques, comme l'a montré `180912` (section 7). On l'exporte ensuite comme d'habitude :
+
+```
+git switch -c repli-194118 f607576                         # config de 194118, code de 180912 (mêmes poids)
+make train DRIVER=driver2                                  # poids identiques à 194118 ; affiche le run créé dans runs/
+rm submission/driver2/model.onnx.data                      # sinon l'export s'ajoute à l'ancien fichier
+make export RUN=<run créé par make train> DRIVER=driver2
+make verify DRIVER=driver2
+```
+
 ### Conditions de la pédagogie (FU2)
 
 La pédagogie annonce pour le tournoi une adhérence de 0,7 à 1,0 sous la pluie. Le pilote s'entraîne avec une adhérence de 0,5 à 1,0 (section 4), mais il est choisi sous 0,7 à 1,0. Sur les 46 courses, avec une adhérence de 0,7 à 1,0 :
